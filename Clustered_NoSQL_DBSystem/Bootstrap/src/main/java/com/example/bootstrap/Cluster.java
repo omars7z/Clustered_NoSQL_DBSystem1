@@ -60,7 +60,7 @@ public class Cluster {
     }
 
     public void sendUserInfo(String username, String token, String workerName) {
-        logger.info("Sending user info to " + workerName + "user name: " + username + " token: " + token);
+        logger.info("Sending user info to " + workerName + " User name: " + username + " Token: " + token);
         String url = "http://" + workerName + ":8081/api/addAuthenticatedUser/" + username + "/" + token;
         HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
         restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);

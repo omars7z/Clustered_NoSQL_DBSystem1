@@ -58,7 +58,7 @@ public class CollectionController {
         APIResponse response = new APIResponse("", 200);
 
         if (PropagatedRequest) {
-            logger.info("the request was propagated.");
+            logger.info("Propagated Request Successfully!");
             if (collectionFile.exists()) {
                 logger.warn("Collection already exists.");
                 response.setMessage("Collection already exists.");
@@ -70,7 +70,7 @@ public class CollectionController {
                 response.setStatusCode(200);
             }
         } else {
-            logger.info("started to propagate the request.");
+            logger.info("Started to Propagate the request.");
             // Propagate the request to the other nodes
             for (String worker : affinityManager.getWorkers()) {
                 String url = "http://" + worker + ":8081/api/createCol/" + dbName + "/" + collectionName;
@@ -85,7 +85,7 @@ public class CollectionController {
             }
         }
 
-        logger.info("Finished creating collection " + collectionName + " in database " + dbName);
+        logger.info("Created collection " + collectionName + " in database " + dbName + "successfully!");
         return response;
     }
 

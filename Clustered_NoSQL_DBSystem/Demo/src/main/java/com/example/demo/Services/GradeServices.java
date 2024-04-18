@@ -60,7 +60,7 @@ public class GradeServices {
         String token = httpSession.getAttribute("token").toString();
         String username = httpSession.getAttribute("username").toString();
 
-        String url = "http://localhost:" + workerPort + "/api/insertOne/classSystem/grades";
+        String url = "http://localhost:" + workerPort + "/api/insertDoc/classSystem/grades";
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Username", username);
         headers.set("X-Token", token);

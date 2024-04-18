@@ -62,11 +62,13 @@ public class GetController {
 
     @GetMapping("getStudent")
     public String getStudent(HttpSession httpSession, Model model) {
+        logger.info("Received request to show student by id");
         return "get-student-id";
     }
 
     @GetMapping("getStudent-grades")
     public String showStudentGrades(Model model, HttpSession httpSession) {
+        logger.info("Received request to show student grades by id");
         return "get-student-id-grades-form";
     }
 

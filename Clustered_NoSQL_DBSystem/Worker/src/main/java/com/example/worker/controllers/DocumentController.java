@@ -63,8 +63,8 @@ public class DocumentController {
     }
 
 
-    @PostMapping("/insertOne/{db_name}/{collection_name}")
-    public APIResponse insertOne(
+    @PostMapping("/insertDoc/{db_name}/{collection_name}")
+    public APIResponse insertDoc(
             @PathVariable("db_name") String dbName,
             @PathVariable("collection_name") String collectionName,
             @RequestBody String json,
@@ -118,7 +118,7 @@ public class DocumentController {
             json = addIdToDocument(json);
             // propagating the new document to all workers
             for (String worker : affinityManager.getWorkers()) {
-                String url = "http://" + worker + ":8081/api/insertOne/" + dbName + "/" + collectionName;
+                String url = "http://" + worker + ":8081/api/insertDoc/" + dbName + "/" + collectionName;
                 headers.set("X-Propagated-Request", "true");
                 HttpEntity<String> requestEntity = new HttpEntity<>(json, headers);
                 restTemplate.postForObject(url, requestEntity, APIResponse.class);
@@ -144,7 +144,7 @@ public class DocumentController {
                     if (responseEntity.getBody()) {
                         logger.info("The current worker: " + affinityManager.getCurrentWorkerName() + " is not the " +
                                 "affinity, The affinity worker is: {}", worker);
-                        String affinityUrl = "http://" + worker + ":8081/api/insertOne/" + dbName + "/" + collectionName;
+                        String affinityUrl = "http://" + worker + ":8081/api/insertDoc/" + dbName + "/" + collectionName;
                         HttpEntity<String> affinityRequestEntity = new HttpEntity<>(json, headers);
                         restTemplate.postForObject(affinityUrl, affinityRequestEntity, APIResponse.class);
                         break;
@@ -210,9 +210,9 @@ public class DocumentController {
 
         JSONObject obj = dao.getDocument(dbName, collectionName, docId);
         if (obj == null) {
-            return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
+            return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName, 404);
         } else {
-            logger.info("Document with ID " + docId + " found in collection " + collectionName + ".");
+            logger.info("Document with ID " + docId + " found in collection ( " + collectionName + " )");
             return new APIResponse(obj.toString(), 200);
         }
     }
@@ -225,7 +225,7 @@ public class DocumentController {
             @RequestHeader(value = "X-Username") String username,
             @RequestHeader(value = "X-Token") String token
     ) {
-        logger.info("Getting all documents from collection " + collection_name + " in database " + db_name + ".");
+        logger.info("Getting all documents from collection " + collection_name + " in database " + db_name );
 
         db_name = db_name.toLowerCase();
         collection_name = collection_name.toLowerCase();
@@ -342,8 +342,8 @@ public class DocumentController {
             @RequestHeader(value = "X-Token") String token,
             @RequestHeader(value = "X-Old-Value", required = false) String oldValue
     ) {
-        logger.info("Updating document with ID " + docId + " in collection " + collectionName + " in database " + dbName
-                + (propagatedRequest ? " (propagated)" : "") + ".");
+        logger.info("Updating document synchronously with ID " + docId + " in collection " + collectionName + " in database " + dbName
+                + (propagatedRequest ? " (propagated successfully)!" : ""));
 
         dbName = dbName.toLowerCase();
         collectionName = collectionName.toLowerCase();
@@ -425,8 +425,7 @@ public class DocumentController {
             if (oldValue != null) {
                 String currentObjectValue = currentObject.get(propertyName).toString();
                 if (!oldValue.equals(currentObjectValue)) {
-                    return new APIResponse
-                            ("your version of this document doesn't match the up-to-date document " +
+                    return new APIResponse("version of this document doesn't match the up-to-date document " +
                                     "(optimistic looking rules violation)", 400);
                 }
             }
