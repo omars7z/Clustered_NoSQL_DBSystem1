@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>Administrator System</title>
+    <link href="/style.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: cornflowerblue;
+        }
+    </style>
+</head>
+
+
+<body>
+<div class="container">
+
+    <h1>Admin page</h1>
+    <div class="button-container">
+        <form action="/all-users" method="get">
+            <button type="submit">All Active Users</button>
+        </form>
+        <form action="remove-user" method="get">
+            <button type="submit">Remove User</button>
+        </form>
+    </div>
+
+    <br>
+    <br>
+
+    <div class="button-container">
+        <a style="" th:href="@{/}">Home Page</a>
+    </div>
+
+</div>
+</body>
+</html>

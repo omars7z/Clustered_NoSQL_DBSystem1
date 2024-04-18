@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account</title>
+    <link href="/style.css" rel="stylesheet">
+    <style>
+        .container {
+            margin-top: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 85vh;
+            width: 42vw;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Create Account</h1>
+    <form action="storeNewAccountData" method="post">
+        <label for="studentName">Student Name:</label>
+        <input id="studentName" name="studentName" required type="text">
+        <br>
+        <label for="studentPlace">Place:</label>
+        <input id="studentPlace" name="studentPlace" required type="text">
+        <br>
+        <label for="studentPhone">Phone:</label>
+        <input id="studentPhone" name="studentPhone" required type="text">
+        <br>
+        <label for="GPA"> GPA</label>
+        <input id="GPA" name="GPA" required type="number">
+        <br>
+        <br>
+        <button type="submit">Create Account</button>
+    </form>
+
+    <div class="button-container">
+        <form action="/classSystem" method="get">
+            <button type="submit">Back</button>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>

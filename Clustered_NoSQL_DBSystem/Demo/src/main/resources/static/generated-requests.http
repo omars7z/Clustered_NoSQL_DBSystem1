@@ -1,0 +1,70 @@
+GET http://localhost:8081/api/item?id=99
+Accept: application/json
+
+###
+###
+GET http://localhost:8080/login
+
+<> 2024-02-26T195033.200.html
+
+###
+GET http://localhost:8080/login
+
+###
+GET http://localhost:8080/login
+
+###
+GET /
+
+###
+GET /
+
+###
+GET /
+
+###
+DELETE http://localhost:8080/api/dao/grades/{{gradeId}}
+
+###
+DELETE http://localhost:8080/api/admin/delete/user
+
+###
+GET http://localhost:8080/api/students
+
+<> 2024-03-01T181451.500.json
+
+###
+GET http://localhost:8080/api/students/{{studentId}}/grades
+
+###
+GET http://localhost:8080/api/instructors/grades
+
+###
+POST http://localhost:8088/registerNewUser
+
+###
+GET http://localhost:8080/api/register/{{username}}
+
+###
+GET http://localhost:8080/api/register/{{username}}
+
+###
+DELETE http://localhost:8080/api/removeUser/{{username}}
+
+###
+GET http://localhost:8081/api/setAffinity
+
+###
+POST http://localhost:8081/api/insertOne/{{db_name}}/{{collection_name}}
+Content-Type: application/json
+
+{
+  "username" : "jack",
+  "token" : ""
+}
+
+###
+GET http://localhost:8081/api/createDB/{{students}}
+
+###
+GET http://localhost:8081/api/createDB/{{name}}

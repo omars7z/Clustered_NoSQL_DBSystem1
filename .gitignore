@@ -1,0 +1,3 @@
+# Project exclude paths
+/Clustered_NoSQL_DBSystem/Bootstrap/target/
+/Clustered_NoSQL_DBSystem/Worker/target/

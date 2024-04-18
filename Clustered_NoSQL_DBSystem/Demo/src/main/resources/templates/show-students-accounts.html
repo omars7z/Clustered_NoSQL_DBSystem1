@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="/style.css" rel="stylesheet">
+    <title>Students Accounts</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #ddd;
+            color: black;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        table {
+            font-size: large;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Students Information: </h1>
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Place</th>
+            <th>Phone</th>
+            <th>GPA</th>
+            <th>ID</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="student : ${students}">
+            <td th:text="${student.getString('name')}"></td>
+            <td th:text="${student.getString('place')}"></td>
+            <td th:text="${student.getString('phone')}"></td>
+            <td th:text="${student.get('GPA')}"></td>
+            <td th:text="${student.get('_id')}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <form action="/classSystem" method="get">
+        <button type="submit">Back</button>
+    </form>
+</div>
+
+</body>
+</html>

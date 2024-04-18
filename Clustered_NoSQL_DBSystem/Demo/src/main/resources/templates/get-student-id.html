@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Get Student Form</title>
+    <link href="/style.css" rel="stylesheet">
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 40vh;
+            width: 40vw;
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="container">
+    <h1>Get Student</h1>
+    <form action="showStudent" method="post">
+        <label for="studentAccountID">Student ID:</label>
+        <input id="studentAccountID" name="studentAccountID" required type="text">
+        <br>
+        <br>
+        <button type="submit">Get Student</button>
+    </form>
+</div>
+
+</body>
+</html>

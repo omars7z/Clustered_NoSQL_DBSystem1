@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Grades Manager</title>
+    <link href="/style.css" rel="stylesheet">
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 50vh;
+            width: 50vw;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Grades Manager</h1>
+    <form action="storeNewGrades" method="post">
+        <label for="studentAccountID">Account ID:</label>
+        <input id="studentAccountID" name="studentAccountID" required type="text">
+        <br>
+
+        <label for="gradeAmount">Grade Amount:</label>
+        <input id="gradeAmount" name="gradeAmount" type="text">
+
+        <br>
+        <br>
+        <button type="submit">Add Grade</button>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Decentralized Student System Application</title>
+    <link href="/style.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: aquamarine;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="container">
+    <h1>Decentralized Student System Application</h1>
+
+    <div class="button-container">
+        <form action="CreateNewAccount" method="GET">
+            <button type="submit">Create New Account</button>
+        </form>
+
+        <form action="showStudentsAccounts" method="GET">
+            <button type="submit">Show Students Accounts</button>
+        </form>
+
+        <form action="addNewGrades" method="GET">
+            <button type="submit">Add New Grade</button>
+        </form>
+    </div>
+    <div class="button-container">
+        <form action="getStudent" method="GET">
+            <button type="submit">Get Student</button>
+        </form>
+
+        <form action="getStudent-grades" method="GET">
+            <button type="submit">Get Student Transactions</button>
+        </form>
+
+        <form action="removeStudent" method="GET">
+            <button type="submit">Remove Student</button>
+        </form>
+    </div>
+
+    <br>
+    <br>
+    <div class="button-container">
+        <a th:href="@{/}">Home Page</a>
+    </div>
+
+</div>
+</body>
+</html>
