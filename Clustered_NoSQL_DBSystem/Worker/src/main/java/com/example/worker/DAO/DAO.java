@@ -20,12 +20,10 @@ public class DAO {
     private LRUCache<String, JSONArray> cache = new LRUCache<>(1000);
     private PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
 
-    // done
     public synchronized void clearCollectionCaching(File collectionFile) {
         cache.remove(collectionFile.getName());
     }
 
-    // done
     public void clearDBCache(File dbDirectory) {
         File[] files = dbDirectory.listFiles();
         for (File collectionFile : files) {
@@ -35,7 +33,6 @@ public class DAO {
         }
     }
 
-    // done
     public String allCollections(File dbDirectory) {
         File[] files = dbDirectory.listFiles();
         StringBuilder collections = new StringBuilder();
@@ -53,7 +50,6 @@ public class DAO {
         return collections.toString();
     }
 
-    // done
     public synchronized void createCollection(File collectionFile, File schemaFile, Schema schema) {
         try {
             collectionFile.createNewFile();
@@ -72,7 +68,6 @@ public class DAO {
     }
 
 
-    // done
     public JSONObject getDocument(String dbName, String collectionName, String id) {
 
         // trying to get it from the indexing first.
@@ -92,7 +87,6 @@ public class DAO {
     }
 
 
-    // done
     public boolean updateDoc(File collectionFile, String docId, JSONObject newObj) {
 
         JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
@@ -116,7 +110,6 @@ public class DAO {
         return false;
     }
 
-    // done
     public synchronized void addDocument(File collectionFile, String jsonOBJ) {
         JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
         JSONObject jsonObject = new JSONObject(jsonOBJ);
@@ -132,7 +125,6 @@ public class DAO {
         }
     }
 
-    // done
     public String getAllDocs(File collectionFile) {
         JSONArray jsonArray = cache.get(collectionFile.getName());
         if (jsonArray != null)
@@ -145,7 +137,6 @@ public class DAO {
         }
     }
 
-    // done
     public JSONArray getFilteredData(File collectionFile, String attributeName, String attributeValue) {
         // accessing the cache first.
         JSONArray collectionData = cache.get(collectionFile.getName());
@@ -169,7 +160,6 @@ public class DAO {
     }
 
 
-    // done
     public boolean deleteDoc(String docContent, File collectionFile, String docId) {
 
         JSONArray jsonArray = cache.get(collectionFile.getName());
@@ -197,7 +187,6 @@ public class DAO {
         return false;
     }
 
-    // done
     public String listDbs(File dbDirectory) {
         String[] databases = dbDirectory.list();
 
