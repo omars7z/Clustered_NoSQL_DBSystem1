@@ -1,11 +1,11 @@
 package com.example.worker.controllers;
 
 import com.example.worker.DAO.DAO;
+import com.example.worker.authentication.AuthenticationService;
 import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
 import com.example.worker.model.Schema;
 import com.example.worker.services.AffinityServices;
-import com.example.worker.authentication.AuthenticationService;
 import com.example.worker.threading.AuthLock;
 import org.json.JSONArray;
 import org.slf4j.Logger;
@@ -25,15 +25,21 @@ import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_US
 @RestController
 @RequestMapping("/api")
 public class CollectionController {
+
     private final RestTemplate restTemplate = new RestTemplate();
     private final Object lock = new Object(); // lock object for synchronization
-    private DAO dao = new DAO();
-    private PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
+    private final DAO dao;
+    private final PropertyIndexManager propertyIndexManager;
     private AuthenticationService authenticationService;
-    private AffinityServices affinityServices = AffinityServices.getInstance();
-    private Logger logger = LoggerFactory.getLogger(CollectionController.class);
+    private final AffinityServices affinityServices;
+    private final Logger logger = LoggerFactory.getLogger(CollectionController.class);
 
-    public CollectionController(AuthLock authLock) {
+    public CollectionController(AuthLock authLock, DAO dao, PropertyIndexManager propertyIndexManager,
+                                AuthenticationService authenticationService, AffinityServices affinityServices) {
+        this.dao = dao;
+        this.propertyIndexManager = propertyIndexManager;
+        this.authenticationService = authenticationService;
+        this.affinityServices = affinityServices;
         this.authenticationService = new AuthenticationService(authLock);
     }
 
@@ -43,16 +49,15 @@ public class CollectionController {
             @PathVariable("db_name") String dbName,
             @PathVariable("collection_name") String collectionName,
             @RequestBody Schema schema,
-            @RequestHeader(value = "X-Propagated-Request", defaultValue = "false") boolean PropagatedRequest,
+            @RequestHeader(value = "X-Propagated-Request", defaultValue = "false") boolean propagatedRequest,
             @RequestHeader(value = "X-Username") String username,
             @RequestHeader(value = "X-Token") String token
     ) {
-        logger.info("Received request to create collection " + collectionName + " in database " + dbName
-                + (PropagatedRequest ? " (propagated successfully!)" : "") + " from user: " + username);
+        logger.info("Received request to create collection {} in database {} {} from user: {}", collectionName, dbName,
+                (propagatedRequest ? "(propagated successfully!)" : ""), username);
 
         dbName = dbName.toLowerCase();
         collectionName = collectionName.toLowerCase();
-
 
         if (!authenticationService.isAuthenticatedUser(username, token)) {
             logger.warn("User was not authorized.");
@@ -62,7 +67,7 @@ public class CollectionController {
         File collectionFile = new File(DATABASES_DIRECTORY + dbName + "/" + collectionName + ".json");
         APIResponse response = new APIResponse("", 200);
 
-        if (PropagatedRequest) {
+        if (propagatedRequest) {
             logger.info("Propagated Request Successfully!");
             if (collectionFile.exists()) {
                 logger.warn("Collection already exists.");
@@ -90,7 +95,7 @@ public class CollectionController {
             }
         }
 
-        logger.info("Created collection " + collectionName + " in database " + dbName + " successfully!");
+        logger.info("Created collection {} in database {} successfully!", collectionName, dbName);
         return response;
     }
 
@@ -103,8 +108,8 @@ public class CollectionController {
             @RequestHeader(value = "X-Username") String username,
             @RequestHeader(value = "X-Token") String token
     ) {
-        logger.info("Received request to delete collection '{}.{}'"
-                + (PropagatedRequest ? " (propagated)" : ""), dbName, collectionName);
+        logger.info("Received request to delete collection '{}.{}' {}", dbName, collectionName,
+                (PropagatedRequest ? "(propagated)" : ""));
 
         dbName = dbName.toLowerCase();
         collectionName = collectionName.toLowerCase();
@@ -210,7 +215,6 @@ public class CollectionController {
 
         return response;
     }
-
 
     @GetMapping("getCollections/{db_name}")
     public APIResponse getCollections(@PathVariable("db_name") String dbName,

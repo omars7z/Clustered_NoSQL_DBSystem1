@@ -2,6 +2,7 @@ package com.example.worker.indexing;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.stereotype.Repository;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import static com.example.worker.File.JSON.DATABASES_DIRECTORY;
 import static com.example.worker.File.JSON.readFileAsString;
 
 // Singleton class for managing property indexing.
+@Repository
 public class PropertyIndexManager {
     // Singleton instance.
     private static PropertyIndexManager instance = new PropertyIndexManager();

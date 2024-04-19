@@ -117,8 +117,8 @@ public class StudentServices {
         String token = httpSession.getAttribute("token").toString();
         String username = httpSession.getAttribute("username").toString();
         System.out.println("workerPort: " + workerPort);
-        System.out.println("Removed Token: " + token);
-        System.out.println("Removed Username: " + username);
+        System.out.println("Username responsible for deleting: " + username);
+        System.out.println("Token responsible for deleting: " + token);
 
         String url = "http://localhost:" + workerPort + "/api/deleteDoc/classSystem/students/" + studentID;
         HttpHeaders headers = new HttpHeaders();
