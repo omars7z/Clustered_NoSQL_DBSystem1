@@ -20,77 +20,16 @@ public class AffinityController {
         this.authenticationService = authenticationService;
     }
 
-    @GetMapping("/addAffinityData/{id}/{workerName}")
-    public APIResponse addAffinityData(@PathVariable("id") String id,
-                                       @PathVariable("workerName") String workerName,
-                                       @RequestHeader(value = "X-Username") String adminUserName,
-                                       @RequestHeader(value = "X-Token") String adminToken) {
-        if (!authenticationService.isAdmin(adminUserName, adminToken)) {
-            logger.info("Non registered admin");
-            return new APIResponse("Non registered admin!", 500);
+    @GetMapping("/isAffinity")
+    public boolean isAffinity(@RequestHeader(value = "X-Username") String username,
+                              @RequestHeader(value = "X-Token") String token) {
+        logger.info("Current worker" + affinityServices.getCurrentWorkerName() + (affinityServices.isCurrentWorkerAffinity() ? " is " : " is not ") + "affinity!");
+        if (!authenticationService.isAuthenticatedUser(username, token)) {
+            logger.info("Non registered user");
+            return false;
         }
-        affinityServices.addAffinity(id, workerName);
-        logger.info("added the affinity data for id: " + id + " and workerName: " + workerName);
-        return new APIResponse("Affinity data added successfully!", 200);
+        return affinityServices.isCurrentWorkerAffinity();
     }
-
-//    @GetMapping("/isAdmin/{username}/{token}")
-//    public boolean isAdmin(@PathVariable String username, @PathVariable String token) {
-//        return authenticationService.isAdmin(username, token);
-//    }
-//
-//    @GetMapping("/isUser/{username}/{token}")
-//    public boolean isUser(@PathVariable String username, @PathVariable String token) {
-//        return authenticationService.isAuthenticatedUser(username, token);
-//    }
-
-//    @GetMapping("/addAuthenticatedUser/{username}/{token}")
-//    public APIResponse addAuthenticatedUser(@PathVariable("username") String username, @PathVariable("token") String token,
-//                                            @RequestHeader(value = "X-Username") String adminUserName,
-//                                            @RequestHeader(value = "X-Token") String adminToken) {
-//        logger.info("adding the user: " + username + " with token: " + token);
-//        if (!authenticationService.isAdmin(adminUserName, adminToken)) {
-//            logger.info("Non registered admin");
-//            return new APIResponse("Non registered admin!", 500);
-//        }
-//
-//        authenticationService.addUser(username, token);
-//        return new APIResponse("User added successfully!", 200);
-//    }
-//
-//    @GetMapping("addAdmin/{newAdminame}/{newAdminToken}")
-//    public APIResponse addAdmin(@PathVariable("newAdminame") String newUsername, @PathVariable("newAdminToken") String newAdminToken
-//            , @RequestHeader(value = "X-Username") String adminUserName
-//            , @RequestHeader(value = "X-Token") String adminToken) {
-//
-//        if (!authenticationService.isAdmin(adminUserName, adminToken)) {
-//            return new APIResponse("Non registered admin hasn't the ability to add new admins!", 500);
-//        }
-//
-//        authenticationService.addNewAdmin(newUsername, newAdminToken);
-//        return new APIResponse("Admin added successfully!", 200);
-//    }
-//
-//    @DeleteMapping("/removeAuthenticatedUser/{username}/{token}")
-//    public APIResponse removeAuthenticatedUser(
-//            @PathVariable("username") String username, @PathVariable("token") String token
-//            , @RequestHeader(value = "X-Username") String adminUserName
-//            , @RequestHeader(value = "X-Token") String adminToken) {
-//
-//        logger.info("removing the user: " + username + " with token: " + token);
-//        if (!authenticationService.isAdmin(adminUserName, adminToken)) {
-//            logger.info("Non registered admin");
-//            return new APIResponse("Non registered admin!", 500);
-//        }
-//
-//        if (!authenticationService.isAuthenticatedUser(username, token)) {
-//            logger.info("User is not registered already!");
-//            return new APIResponse("User is not registered already!", 500);
-//        }
-//
-//        authenticationService.removeUser(username, token);
-//        return new APIResponse("User removed successfully!", 200);
-//    }
 
     @GetMapping("/setAffinity")
     public APIResponse setAffinity(
@@ -118,16 +57,6 @@ public class AffinityController {
         return new APIResponse("Affinity unset successfully!", 200);
     }
 
-    @GetMapping("/isAffinity")
-    public boolean isAffinity(@RequestHeader(value = "X-Username") String username,
-                              @RequestHeader(value = "X-Token") String token) {
-        logger.info("Current worker" + affinityServices.getCurrentWorkerName() + (affinityServices.isCurrentWorkerAffinity() ? " is " : " is not ") + "affinity!");
-        if (!authenticationService.isAuthenticatedUser(username, token)) {
-            logger.info("Non registered user");
-            return false;
-        }
-        return affinityServices.isCurrentWorkerAffinity();
-    }
 
     @GetMapping("/setCurrentWorkerName/{name}")
     public APIResponse setCurrentWorkerName(@PathVariable("name") String name,
@@ -151,5 +80,19 @@ public class AffinityController {
             return null;
         }
         return affinityServices.getCurrentWorkerName();
+    }
+
+    @GetMapping("/addAffinityData/{id}/{workerName}")
+    public APIResponse addAffinityData(@PathVariable("id") String id,
+                                       @PathVariable("workerName") String workerName,
+                                       @RequestHeader(value = "X-Username") String adminUserName,
+                                       @RequestHeader(value = "X-Token") String adminToken) {
+        if (!authenticationService.isAdmin(adminUserName, adminToken)) {
+            logger.info("Non registered admin");
+            return new APIResponse("Non registered admin!", 500);
+        }
+        affinityServices.addAffinity(id, workerName);
+        logger.info("added the affinity data for id: " + id + " and workerName: " + workerName);
+        return new APIResponse("Affinity data added successfully!", 200);
     }
 }

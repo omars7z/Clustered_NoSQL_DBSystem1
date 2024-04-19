@@ -11,84 +11,82 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.example.worker.File.JSON.readFileAsString;
 
 public class DAO {
     private final Object lock = new Object(); // lock object for synchronization
-    // The name of the collection - all documents inside it.
-    private LRUCache<String, JSONArray> cache = new LRUCache<>(1000);
-    private PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
+    private final LRUCache<String, JSONArray> cache = new LRUCache<>(1000);
+    private final PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-    public synchronized void clearCollectionCaching(File collectionFile) {
+    public void clearCollectionCaching(File collectionFile) {
         cache.remove(collectionFile.getName());
     }
 
     public void clearDBCache(File dbDirectory) {
         File[] files = dbDirectory.listFiles();
-        for (File collectionFile : files) {
-            if (collectionFile.getName().equals("schemas"))
-                continue;
-            clearCollectionCaching(collectionFile);
+        if (files != null) {
+            for (File collectionFile : files) {
+                if (!collectionFile.getName().equals("schemas")) {
+                    executorService.submit(() -> clearCollectionCaching(collectionFile));
+                }
+            }
         }
     }
 
     public String allCollections(File dbDirectory) {
         File[] files = dbDirectory.listFiles();
         StringBuilder collections = new StringBuilder();
-
-        for (int i = 0; i < files.length; i++) {
-            String current = files[i].getName();
-            if (current.equals("schemas"))
-                continue;
-            // Getting the name without the extension
-            String[] name = current.split("\\.");
-            collections.append(name[0]);
-            if (i != files.length - 1 && files.length > 2)
-                collections.append(", ");
+        if (files != null) {
+            for (File file : files) {
+                if (!file.getName().equals("schemas")) {
+                    collections.append(file.getName(), 0, file.getName().lastIndexOf('.'));
+                    collections.append(", ");
+                }
+            }
         }
         return collections.toString();
     }
 
-    public synchronized void createCollection(File collectionFile, File schemaFile, Schema schema) {
-        try {
-            collectionFile.createNewFile();
-            FileWriter writer = new FileWriter(collectionFile, true);
-            writer.write("[]");
-            writer.close();
+    public void createCollection(File collectionFile, File schemaFile, Schema schema) {
+        executorService.submit(() -> {
+            try {
+                collectionFile.createNewFile();
+                FileWriter writer = new FileWriter(collectionFile, true);
+                writer.write("[]");
+                writer.close();
 
-            schemaFile.createNewFile();
-            schema.setAdditionalProperties(false);
-            writer = new FileWriter(schemaFile);
-            writer.write(new Gson().toJson(schema));
-            writer.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+                schemaFile.createNewFile();
+                schema.setAdditionalProperties(false);
+                writer = new FileWriter(schemaFile);
+                writer.write(new Gson().toJson(schema));
+                writer.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
-
     public JSONObject getDocument(String dbName, String collectionName, String id) {
-
-        // trying to get it from the indexing first.
         JSONArray jsonArray = propertyIndexManager.getMatchingDocs(dbName, collectionName, "_id", id);
-        if (jsonArray.length() != 0) {
-            JSONObject ret = (JSONObject) jsonArray.get(0);
-            return ret;
+        if (!jsonArray.isEmpty()) {
+            return jsonArray.getJSONObject(0);
         }
 
         File collectionFile = new File("databases/" + dbName + "/" + collectionName + ".json");
         JSONArray data = getFilteredData(collectionFile, "_id", id);
 
-        if (data.length() == 0)
+        if (data.isEmpty()) {
             return new JSONObject("{}");
+        }
 
-        return (JSONObject) data.get(0); // for sure there is only one element matching the id.
+        return data.getJSONObject(0); // for sure there is only one element matching the id.
     }
 
-
     public boolean updateDoc(File collectionFile, String docId, JSONObject newObj) {
-
         JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject obj = jsonArray.getJSONObject(i);
@@ -110,25 +108,28 @@ public class DAO {
         return false;
     }
 
-    public synchronized void addDocument(File collectionFile, String jsonOBJ) {
-        JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
-        JSONObject jsonObject = new JSONObject(jsonOBJ);
-        jsonArray.put(jsonObject);
+    public void addDocument(File collectionFile, String jsonOBJ) {
+        executorService.submit(() -> {
+            JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
+            JSONObject jsonObject = new JSONObject(jsonOBJ);
+            jsonArray.put(jsonObject);
 
-        try {
-            FileWriter writer = new FileWriter(collectionFile, false);
-            writer.write(jsonArray.toString());
-            writer.close();
-            cache.put(collectionFile.getName(), jsonArray);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+            try {
+                FileWriter writer = new FileWriter(collectionFile, false);
+                writer.write(jsonArray.toString());
+                writer.close();
+                cache.put(collectionFile.getName(), jsonArray);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public String getAllDocs(File collectionFile) {
         JSONArray jsonArray = cache.get(collectionFile.getName());
-        if (jsonArray != null)
+        if (jsonArray != null) {
             return jsonArray.toString();
+        }
 
         try {
             return FileUtils.readFileToString(collectionFile, "UTF-8");
@@ -138,7 +139,6 @@ public class DAO {
     }
 
     public JSONArray getFilteredData(File collectionFile, String attributeName, String attributeValue) {
-        // accessing the cache first.
         JSONArray collectionData = cache.get(collectionFile.getName());
 
         if (collectionData == null) {
@@ -152,16 +152,12 @@ public class DAO {
                 filteredArray.put(obj);
             }
         }
-        // triggering the caching for the current collection.
-        synchronized (lock) {
-            cache.put(collectionFile.getName(), collectionData);
-        }
+
+        cache.put(collectionFile.getName(), collectionData);
         return filteredArray;
     }
 
-
     public boolean deleteDoc(String docContent, File collectionFile, String docId) {
-
         JSONArray jsonArray = cache.get(collectionFile.getName());
         if (jsonArray == null) {
             jsonArray = new JSONArray(readFileAsString(collectionFile));
@@ -189,13 +185,13 @@ public class DAO {
 
     public String listDbs(File dbDirectory) {
         String[] databases = dbDirectory.list();
-
         StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < databases.length; i++) {
-            sb.append(databases[i]);
-            if (i != databases.length - 1) {
-                sb.append(", ");
+        if (databases != null) {
+            for (int i = 0; i < databases.length; i++) {
+                sb.append(databases[i]);
+                if (i != databases.length - 1) {
+                    sb.append(", ");
+                }
             }
         }
         return sb.toString();
