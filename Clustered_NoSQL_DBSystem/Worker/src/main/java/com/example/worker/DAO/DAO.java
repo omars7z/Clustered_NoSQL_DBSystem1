@@ -3,10 +3,12 @@ package com.example.worker.DAO;
 import com.example.worker.caching.LRUCache;
 import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.Schema;
+import com.example.worker.threading.Threads;
 import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.scheduling.annotation.Async;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -17,21 +19,23 @@ import java.util.concurrent.Executors;
 import static com.example.worker.File.JSON.readFileAsString;
 
 public class DAO {
-    private final Object lock = new Object(); // lock object for synchronization
+    private final Object lock = new Object();
     private final LRUCache<String, JSONArray> cache = new LRUCache<>(1000);
     private final PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
+    @Async
     public void clearCollectionCaching(File collectionFile) {
         cache.remove(collectionFile.getName());
     }
 
+    @Async
     public void clearDBCache(File dbDirectory) {
         File[] files = dbDirectory.listFiles();
         if (files != null) {
             for (File collectionFile : files) {
                 if (!collectionFile.getName().equals("schemas")) {
-                    executorService.submit(() -> clearCollectionCaching(collectionFile));
+                    clearCollectionCaching(collectionFile);
                 }
             }
         }
@@ -51,23 +55,22 @@ public class DAO {
         return collections.toString();
     }
 
+    @Async
     public void createCollection(File collectionFile, File schemaFile, Schema schema) {
-        executorService.submit(() -> {
-            try {
-                collectionFile.createNewFile();
-                FileWriter writer = new FileWriter(collectionFile, true);
-                writer.write("[]");
-                writer.close();
+        try {
+            collectionFile.createNewFile();
+            FileWriter writer = new FileWriter(collectionFile, true);
+            writer.write("[]");
+            writer.close();
 
-                schemaFile.createNewFile();
-                schema.setAdditionalProperties(false);
-                writer = new FileWriter(schemaFile);
-                writer.write(new Gson().toJson(schema));
-                writer.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+            schemaFile.createNewFile();
+            schema.setAdditionalProperties(false);
+            writer = new FileWriter(schemaFile);
+            writer.write(new Gson().toJson(schema));
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public JSONObject getDocument(String dbName, String collectionName, String id) {
@@ -83,9 +86,10 @@ public class DAO {
             return new JSONObject("{}");
         }
 
-        return data.getJSONObject(0); // for sure there is only one element matching the id.
+        return data.getJSONObject(0);
     }
 
+    @Async
     public boolean updateDoc(File collectionFile, String docId, JSONObject newObj) {
         JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
         for (int i = 0; i < jsonArray.length(); i++) {
@@ -108,21 +112,20 @@ public class DAO {
         return false;
     }
 
+    @Async
     public void addDocument(File collectionFile, String jsonOBJ) {
-        executorService.submit(() -> {
-            JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
-            JSONObject jsonObject = new JSONObject(jsonOBJ);
-            jsonArray.put(jsonObject);
+        JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
+        JSONObject jsonObject = new JSONObject(jsonOBJ);
+        jsonArray.put(jsonObject);
 
-            try {
-                FileWriter writer = new FileWriter(collectionFile, false);
-                writer.write(jsonArray.toString());
-                writer.close();
-                cache.put(collectionFile.getName(), jsonArray);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        try {
+            FileWriter writer = new FileWriter(collectionFile, false);
+            writer.write(jsonArray.toString());
+            writer.close();
+            cache.put(collectionFile.getName(), jsonArray);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public String getAllDocs(File collectionFile) {
@@ -130,7 +133,6 @@ public class DAO {
         if (jsonArray != null) {
             return jsonArray.toString();
         }
-
         try {
             return FileUtils.readFileToString(collectionFile, "UTF-8");
         } catch (IOException e) {
@@ -153,7 +155,7 @@ public class DAO {
             }
         }
 
-        cache.put(collectionFile.getName(), collectionData);
+        Threads.synchronizedPut(cache, collectionFile, collectionData); // Safely put data into cache
         return filteredArray;
     }
 
@@ -168,12 +170,10 @@ public class DAO {
             if (obj.getString("_id").equals(docId)) {
                 jsonArray.remove(i);
                 try {
-                    synchronized (lock) {
-                        FileWriter writer = new FileWriter(collectionFile, false);
-                        writer.write(jsonArray.toString());
-                        writer.close();
-                        cache.put(collectionFile.getName(), jsonArray);
-                    }
+                    Threads.synchronizedPut(cache, collectionFile, jsonArray); // Safely put data into cache
+                    FileWriter writer = new FileWriter(collectionFile, false);
+                    writer.write(jsonArray.toString());
+                    writer.close();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
