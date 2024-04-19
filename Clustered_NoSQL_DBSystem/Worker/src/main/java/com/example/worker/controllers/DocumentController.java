@@ -3,7 +3,7 @@ package com.example.worker.controllers;
 import com.example.worker.DAO.DAO;
 import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
-import com.example.worker.services.affinity.AffinityServices;
+import com.example.worker.services.AffinityServices;
 import com.example.worker.authentication.AuthenticationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,9 +24,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
-import static com.example.worker.services.JSON.*;
-import static com.example.worker.services.affinity.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
-import static com.example.worker.services.affinity.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
+import static com.example.worker.File.JSON.*;
+import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
+import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
 
 @RestController
 @RequestMapping("/api")

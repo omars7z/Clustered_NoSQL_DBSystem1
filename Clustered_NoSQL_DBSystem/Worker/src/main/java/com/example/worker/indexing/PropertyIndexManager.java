@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.example.worker.services.JSON.DATABASES_DIRECTORY;
-import static com.example.worker.services.JSON.readFileAsString;
+import static com.example.worker.File.JSON.DATABASES_DIRECTORY;
+import static com.example.worker.File.JSON.readFileAsString;
 
 // Singleton class for managing property indexing.
 public class PropertyIndexManager {

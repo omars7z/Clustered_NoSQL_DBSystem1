@@ -3,7 +3,7 @@ package com.example.worker.controllers;
 import com.example.worker.DAO.DAO;
 import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
-import com.example.worker.services.affinity.AffinityServices;
+import com.example.worker.services.AffinityServices;
 import com.example.worker.authentication.AuthenticationService;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -16,10 +16,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 
-import static com.example.worker.services.JSON.DATABASES_DIRECTORY;
-import static com.example.worker.services.JSON.SCHEMAS_DIRECTORY;
-import static com.example.worker.services.affinity.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
-import static com.example.worker.services.affinity.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
+import static com.example.worker.File.JSON.DATABASES_DIRECTORY;
+import static com.example.worker.File.JSON.SCHEMAS_DIRECTORY;
+import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
+import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
 
 @RestController
 @RequestMapping("/api")
