@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Repository;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -18,29 +19,28 @@ import java.util.concurrent.Executors;
 
 import static com.example.worker.File.JSON.readFileAsString;
 
-public class DAO {
+@Repository
+public class DAO implements DAOInterface{
     private final Object lock = new Object();
     private final LRUCache<String, JSONArray> cache = new LRUCache<>(1000);
     private final PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-    @Async
-    public void clearCollectionCaching(File collectionFile) {
-        cache.remove(collectionFile.getName());
-    }
-
-    @Async
-    public void clearDBCache(File dbDirectory) {
-        File[] files = dbDirectory.listFiles();
-        if (files != null) {
-            for (File collectionFile : files) {
-                if (!collectionFile.getName().equals("schemas")) {
-                    clearCollectionCaching(collectionFile);
+    @Override
+    public String allDbs(File dbDirectory) {
+        String[] databases = dbDirectory.list();
+        StringBuilder sb = new StringBuilder();
+        if (databases != null) {
+            for (int i = 0; i < databases.length; i++) {
+                sb.append(databases[i]);
+                if (i != databases.length - 1) {
+                    sb.append(", ");
                 }
             }
         }
+        return sb.toString();
     }
 
+    @Override
     public String allCollections(File dbDirectory) {
         File[] files = dbDirectory.listFiles();
         StringBuilder collections = new StringBuilder();
@@ -56,6 +56,7 @@ public class DAO {
     }
 
     @Async
+    @Override
     public void createCollection(File collectionFile, File schemaFile, Schema schema) {
         try {
             collectionFile.createNewFile();
@@ -73,6 +74,24 @@ public class DAO {
         }
     }
 
+    @Async
+    @Override
+    public void addDocument(File collectionFile, String jsonOBJ) {
+        JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
+        JSONObject jsonObject = new JSONObject(jsonOBJ);
+        jsonArray.put(jsonObject);
+
+        try {
+            FileWriter writer = new FileWriter(collectionFile, false);
+            writer.write(jsonArray.toString());
+            writer.close();
+            cache.put(collectionFile.getName(), jsonArray);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public JSONObject getDocument(String dbName, String collectionName, String id) {
         JSONArray jsonArray = propertyIndexManager.getMatchingDocs(dbName, collectionName, "_id", id);
         if (!jsonArray.isEmpty()) {
@@ -89,7 +108,21 @@ public class DAO {
         return data.getJSONObject(0);
     }
 
+    @Override
+    public String getAllDocs(File collectionFile) {
+        JSONArray jsonArray = cache.get(collectionFile.getName());
+        if (jsonArray != null) {
+            return jsonArray.toString();
+        }
+        try {
+            return FileUtils.readFileToString(collectionFile, "UTF-8");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Async
+    @Override
     public boolean updateDoc(File collectionFile, String docId, JSONObject newObj) {
         JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
         for (int i = 0; i < jsonArray.length(); i++) {
@@ -112,34 +145,7 @@ public class DAO {
         return false;
     }
 
-    @Async
-    public void addDocument(File collectionFile, String jsonOBJ) {
-        JSONArray jsonArray = new JSONArray(readFileAsString(collectionFile));
-        JSONObject jsonObject = new JSONObject(jsonOBJ);
-        jsonArray.put(jsonObject);
-
-        try {
-            FileWriter writer = new FileWriter(collectionFile, false);
-            writer.write(jsonArray.toString());
-            writer.close();
-            cache.put(collectionFile.getName(), jsonArray);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public String getAllDocs(File collectionFile) {
-        JSONArray jsonArray = cache.get(collectionFile.getName());
-        if (jsonArray != null) {
-            return jsonArray.toString();
-        }
-        try {
-            return FileUtils.readFileToString(collectionFile, "UTF-8");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    @Override
     public JSONArray getFilteredData(File collectionFile, String attributeName, String attributeValue) {
         JSONArray collectionData = cache.get(collectionFile.getName());
 
@@ -159,6 +165,7 @@ public class DAO {
         return filteredArray;
     }
 
+    @Override
     public boolean deleteDoc(String docContent, File collectionFile, String docId) {
         JSONArray jsonArray = cache.get(collectionFile.getName());
         if (jsonArray == null) {
@@ -183,17 +190,22 @@ public class DAO {
         return false;
     }
 
-    public String listDbs(File dbDirectory) {
-        String[] databases = dbDirectory.list();
-        StringBuilder sb = new StringBuilder();
-        if (databases != null) {
-            for (int i = 0; i < databases.length; i++) {
-                sb.append(databases[i]);
-                if (i != databases.length - 1) {
-                    sb.append(", ");
+    @Async
+    @Override
+    public void clearCollectionCaching(File collectionFile) {
+        cache.remove(collectionFile.getName());
+    }
+
+    @Async
+    @Override
+    public void clearDBCache(File dbDirectory) {
+        File[] files = dbDirectory.listFiles();
+        if (files != null) {
+            for (File collectionFile : files) {
+                if (!collectionFile.getName().equals("schemas")) {
+                    clearCollectionCaching(collectionFile);
                 }
             }
         }
-        return sb.toString();
     }
 }

@@ -10,7 +10,7 @@ public interface DAOInterface {
 
     void clearDBCache(File dbDirectory);
 
-    String listDbs(File dbDirectory);
+    String allDbs(File dbDirectory);
 
     void clearCollectionCaching(File collectionFile);
 
@@ -22,11 +22,11 @@ public interface DAOInterface {
 
     JSONObject getDocument(String dbName, String collectionName, String id);
 
+    JSONArray getFilteredData(File collectionFile, String attributeName, String attributeValue);
+
     void addDocument(File collectionFile, String jsonOBJ);
 
     boolean updateDoc(File collectionFile, String docId, JSONObject newObj);
 
     boolean deleteDoc(String docContent, File collectionFile, String docId);
-
-    JSONArray getFilteredData(File collectionFile, String attributeName, String attributeValue);
 }
