@@ -1,12 +1,12 @@
 package com.example.worker.authentication;
 
 import com.example.worker.caching.LRUCache;
+import com.example.worker.threading.AuthLock;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
 import static com.example.worker.File.JSON.readFileAsString;
@@ -15,126 +15,57 @@ import static com.example.worker.File.JSON.readFileAsString;
 public class AuthenticationService {
 
     private final String authDirectory = "src/main/java/com/example/worker/authentication/";
-    private final Object lock = new Object();
-    private LRUCache<String, String> userCache, adminCache;
+    private final LRUCache<String, String> userCache = new LRUCache<>(1000);
+    private final LRUCache<String, String> adminCache = new LRUCache<>(1000);
+    private final AuthLock authLock;
 
-    public AuthenticationService() {
-        userCache = new LRUCache<>(1000);
-        adminCache = new LRUCache<>(1000);
+    public AuthenticationService(AuthLock authLock) {
+        this.authLock = authLock;
     }
 
     public void addUser(String username, String token) {
-        if (username == null || token == null) {
-            throw new RuntimeException("username or token is null");
-        }
-
-        // adding to the cache.
+        validateInput(username, token);
         userCache.put(token, username);
-
-        // adding to the file.
-        File usersCollection = new File(authDirectory + "users.json");
-        String content = readFileAsString(usersCollection);
-        if (content.isEmpty())
-            content = "[]";
-        JSONArray jsonArray = new JSONArray(content);
-        JSONObject jsonObject = new JSONObject();
-
-        jsonObject.put("username", username);
-        jsonObject.put("token", token);
-        jsonArray.put(jsonObject);
-
-        try {
-
-            FileWriter fileWriter = new FileWriter(usersCollection);
-            synchronized (lock) {
-                fileWriter.write(jsonArray.toString());
-            }
-            fileWriter.close();
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        updateAuthFile("users.json", username, token);
     }
 
     public void addNewAdmin(String username, String token) {
-        if (username == null || token == null) {
-            throw new RuntimeException("username or token is null");
-        }
-
-        // adding the admin as a user first.
+        validateInput(username, token);
         addUser(username, token);
-
-        // adding to the cache.
         adminCache.put(token, username);
-
-        // adding to the file.
-        File adminsCollection = new File(authDirectory + "admins.json");
-        String content = readFileAsString(adminsCollection);
-
-        if (content.isEmpty())
-            content = "[]";
-
-        JSONArray jsonArray = new JSONArray(content);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("username", username);
-        jsonObject.put("token", token);
-        jsonArray.put(jsonObject);
-
-        try {
-            synchronized (lock) {
-                FileWriter fileWriter = new FileWriter(adminsCollection);
-                fileWriter.write(jsonArray.toString());
-                fileWriter.flush();
-                fileWriter.close();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        updateAuthFile("admins.json", username, token);
     }
 
     public synchronized void removeUser(String username, String token) {
-        if (username == null || token == null) {
-            throw new RuntimeException("username or token is null");
-        }
-
-        // removing from the cache.
+        validateInput(username, token);
         userCache.remove(token);
-
-        // removing from the file.
-        File usersCollection = new File(authDirectory + "users.json");
-        String content = readFileAsString(usersCollection);
-        JSONArray jsonArray = new JSONArray(content);
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject jsonObject = jsonArray.getJSONObject(i);
-            if (jsonObject.get("token").equals(token) && jsonObject.get("username").equals(username)) {
-                jsonArray.remove(i);
-                break;
-            }
-        }
-        try {
-            FileWriter fileWriter = new FileWriter(usersCollection);
-            fileWriter.write(jsonArray.toString());
-            fileWriter.flush();
-            fileWriter.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        removeAuthEntry("users.json", username, token);
     }
 
     public boolean isAuthenticatedUser(String username, String token) {
-        if (username == null || token == null) {
-            throw new RuntimeException("username or token is null");
-        }
-
-        // checking the cache.
-        Object get = userCache.get(token);
-        if (get != null && get.equals(username)) {
+        validateInput(username, token);
+        if (userCache.get(token) != null && userCache.get(token).equals(username)) {
             return true;
         }
+        return checkAuthFile("users.json", username, token);
+    }
 
-        // checking the file.
-        File collection = new File(authDirectory + "users.json");
-        String content = readFileAsString(collection);
+    public boolean isAdmin(String username, String token) {
+        validateInput(username, token);
+        if (adminCache.get(token) != null && adminCache.get(token).equals(username)) {
+            return true;
+        }
+        return checkAuthFile("admins.json", username, token);
+    }
+
+    private void validateInput(String username, String token) {
+        if (username == null || token == null) {
+            throw new IllegalArgumentException("Username or token is null");
+        }
+    }
+
+    private boolean checkAuthFile(String fileName, String username, String token) {
+        String content = readFileAsString(new File(authDirectory + fileName));
         JSONArray jsonArray = new JSONArray(content);
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonObject = jsonArray.getJSONObject(i);
@@ -146,29 +77,34 @@ public class AuthenticationService {
         return false;
     }
 
-    public boolean isAdmin(String username, String token) {
-        if (username == null || token == null) {
-            throw new RuntimeException("username or token is null");
+    private void updateAuthFile(String fileName, String username, String token) {
+        String content = readFileAsString(new File(authDirectory + fileName));
+        JSONArray jsonArray = new JSONArray(content);
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("username", username);
+        jsonObject.put("token", token);
+        jsonArray.put(jsonObject);
+        try {
+            authLock.writeJsonArrayToFile(new File(authDirectory + fileName), jsonArray.toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        // checking the cache.
-        Object get = adminCache.get(token);
-        if (get != null && get.equals(username)) {
-            return true;
-        }
-
-
-        // checking the file.
-        File collection = new File(authDirectory + "admins.json");
-        String content = readFileAsString(collection);
+    private void removeAuthEntry(String fileName, String username, String token) {
+        String content = readFileAsString(new File(authDirectory + fileName));
         JSONArray jsonArray = new JSONArray(content);
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonObject = jsonArray.getJSONObject(i);
             if (jsonObject.get("token").equals(token) && jsonObject.get("username").equals(username)) {
-                adminCache.put(username, token);
-                return true;
+                jsonArray.remove(i);
+                break;
             }
         }
-        return false;
+        try {
+            authLock.writeJsonArrayToFile(new File(authDirectory + fileName), jsonArray.toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -6,6 +6,7 @@ import com.example.worker.model.APIResponse;
 import com.example.worker.model.Schema;
 import com.example.worker.services.AffinityServices;
 import com.example.worker.authentication.AuthenticationService;
+import com.example.worker.threading.AuthLock;
 import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +29,13 @@ public class CollectionController {
     private final Object lock = new Object(); // lock object for synchronization
     private DAO dao = new DAO();
     private PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
-    private AuthenticationService authenticationService = new AuthenticationService();
+    private AuthenticationService authenticationService;
     private AffinityServices affinityServices = AffinityServices.getInstance();
     private Logger logger = LoggerFactory.getLogger(CollectionController.class);
+
+    public CollectionController(AuthLock authLock) {
+        this.authenticationService = new AuthenticationService(authLock);
+    }
 
     @PostMapping("createCol/{db_name}/{collection_name}")
     @ResponseBody

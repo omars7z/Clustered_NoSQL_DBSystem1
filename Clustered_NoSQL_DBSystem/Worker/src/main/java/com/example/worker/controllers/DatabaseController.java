@@ -5,6 +5,7 @@ import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
 import com.example.worker.services.AffinityServices;
 import com.example.worker.authentication.AuthenticationService;
+import com.example.worker.threading.AuthLock;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +27,14 @@ import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_US
 public class DatabaseController {
     private DAO dao = new DAO();
     private PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
-    private AuthenticationService authenticationService = new AuthenticationService();
+    private AuthenticationService authenticationService;
     private RestTemplate restTemplate = new RestTemplate();
     private AffinityServices affinityManager = AffinityServices.getInstance();
     private Logger logger = LoggerFactory.getLogger(CollectionController.class);
 
+    public DatabaseController(AuthLock authLock) {
+        this.authenticationService = new AuthenticationService(authLock);
+    }
     @GetMapping("/createDB/{name}")
     public APIResponse createDatabase(@PathVariable("name") String name,
                                       @RequestHeader(value = "X-Propagated-Request", defaultValue = "false") boolean propagatedRequest,

@@ -5,6 +5,7 @@ import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
 import com.example.worker.services.AffinityServices;
 import com.example.worker.authentication.AuthenticationService;
+import com.example.worker.threading.AuthLock;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;
@@ -35,9 +36,12 @@ public class DocumentController {
     private PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
     private AffinityServices affinityServices = AffinityServices.getInstance();
     private RestTemplate restTemplate = new RestTemplate();
-    private AuthenticationService authenticationService = new AuthenticationService();
+    private AuthenticationService authenticationService;
     private Logger logger = LoggerFactory.getLogger(DocumentController.class);
 
+    public DocumentController(AuthLock authLock) {
+        this.authenticationService = new AuthenticationService(authLock);
+    }
     public boolean validJSONObject(String json, File schemaFile) {
         try {
             String withoutId = removeIdFromDoc(json);
