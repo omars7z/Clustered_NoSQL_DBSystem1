@@ -83,7 +83,7 @@ public class PostController {
 
         logger.info("Storing new grade");
         logger.info("Receiver name: " + studentAccountID);
-        logger.info("Grade Updated to: " + gradeAmount);
+        logger.info("Added Grade to cumulative GPA: " + gradeAmount);
 
         gradeServices.changeGrade(studentAccountID, gradeAmount, httpSession);
         return "class-system";

@@ -4,7 +4,7 @@ import com.example.worker.DAO.DAO;
 import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
 import com.example.worker.services.affinity.AffinityManager;
-import com.example.worker.services.authentication.AuthenticationService;
+import com.example.worker.authentication.AuthenticationService;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

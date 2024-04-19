@@ -4,7 +4,7 @@ import com.example.worker.DAO.DAO;
 import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
 import com.example.worker.services.affinity.AffinityManager;
-import com.example.worker.services.authentication.AuthenticationService;
+import com.example.worker.authentication.AuthenticationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;

@@ -1,4 +1,4 @@
-package com.example.worker.services.authentication;
+package com.example.worker.authentication;
 
 import com.example.worker.caching.LRUCache;
 import org.json.JSONArray;
@@ -14,7 +14,7 @@ import static com.example.worker.services.FileServices.readFileAsString;
 @Component
 public class AuthenticationService {
 
-    private final String authDirectory = "src/main/java/com/example/worker/services/authentication/";
+    private final String authDirectory = "src/main/java/com/example/worker/authentication/";
     private final Object lock = new Object();
     private LRUCache<String, String> userCache, adminCache;
 

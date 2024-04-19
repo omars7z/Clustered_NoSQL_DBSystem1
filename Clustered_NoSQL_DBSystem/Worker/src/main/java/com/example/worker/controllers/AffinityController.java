@@ -2,7 +2,7 @@ package com.example.worker.controllers;
 
 import com.example.worker.model.APIResponse;
 import com.example.worker.services.affinity.AffinityManager;
-import com.example.worker.services.authentication.AuthenticationService;
+import com.example.worker.authentication.AuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
