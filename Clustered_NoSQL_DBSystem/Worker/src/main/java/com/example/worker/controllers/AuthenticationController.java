@@ -58,7 +58,7 @@ public class AuthenticationController {
             return new APIResponse("Non registered admin hasn't the ability to add new admins!", 500);
         }
 
-        authenticationService.addNewAdmin(newUsername, newAdminToken);
+        authenticationService.addAdmin(newUsername, newAdminToken);
         return new APIResponse("Admin added successfully!", 200);
     }
 

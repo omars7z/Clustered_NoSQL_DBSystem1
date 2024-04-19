@@ -23,13 +23,21 @@ public class AuthenticationService {
         this.authLock = authLock;
     }
 
+    public boolean isAuthenticatedUser(String username, String token) {
+        validateInput(username, token);
+        if (userCache.get(token) != null && userCache.get(token).equals(username)) {
+            return true;
+        }
+        return checkAuthFile("users.json", username, token);
+    }
+
     public void addUser(String username, String token) {
         validateInput(username, token);
         userCache.put(token, username);
         updateAuthFile("users.json", username, token);
     }
 
-    public void addNewAdmin(String username, String token) {
+    public void addAdmin(String username, String token) {
         validateInput(username, token);
         addUser(username, token);
         adminCache.put(token, username);
@@ -40,14 +48,6 @@ public class AuthenticationService {
         validateInput(username, token);
         userCache.remove(token);
         removeAuthEntry("users.json", username, token);
-    }
-
-    public boolean isAuthenticatedUser(String username, String token) {
-        validateInput(username, token);
-        if (userCache.get(token) != null && userCache.get(token).equals(username)) {
-            return true;
-        }
-        return checkAuthFile("users.json", username, token);
     }
 
     public boolean isAdmin(String username, String token) {

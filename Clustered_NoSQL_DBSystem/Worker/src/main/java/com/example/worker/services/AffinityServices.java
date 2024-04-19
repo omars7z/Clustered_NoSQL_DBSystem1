@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
@@ -15,6 +16,7 @@ import java.util.List;
 
 import static com.example.worker.File.JSON.readFileAsString;
 
+@Service
 public class AffinityServices {
     public final static String BOOTSTRAPPING_NODE_USERNAME = "admin";
     public final static String BOOTSTRAPPING_NODE_TOKEN = "admin123";
