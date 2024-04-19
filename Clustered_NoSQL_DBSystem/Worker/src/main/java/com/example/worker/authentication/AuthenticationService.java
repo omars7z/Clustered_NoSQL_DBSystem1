@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static com.example.worker.services.FileServices.readFileAsString;
+import static com.example.worker.services.JSON.readFileAsString;
 
 @Component
 public class AuthenticationService {

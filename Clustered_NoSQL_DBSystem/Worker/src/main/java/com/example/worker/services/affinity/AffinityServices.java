@@ -13,12 +13,12 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.worker.services.FileServices.readFileAsString;
+import static com.example.worker.services.JSON.readFileAsString;
 
-public class AffinityManager {
+public class AffinityServices {
     public final static String BOOTSTRAPPING_NODE_USERNAME = "admin";
     public final static String BOOTSTRAPPING_NODE_TOKEN = "admin123";
-    private static AffinityManager instance = null;
+    private static AffinityServices instance = null;
     private final String AFFINITY_FILE_PATH = "src/main/java/com/example/worker/services/affinity/document-affinity.json";
     private final Object lock = new Object();
     private List<String> workers = new ArrayList<>();
@@ -26,15 +26,15 @@ public class AffinityManager {
     private boolean isCurrentWorkerAffinity = false;
     private LRUCache<String, String> affinityCache = new LRUCache(100000); // cache for affinity.
 
-    private AffinityManager() {
+    private AffinityServices() {
         workers.add("worker1");
         workers.add("worker2");
         workers.add("worker3");
     }
 
-    public static AffinityManager getInstance() {
+    public static AffinityServices getInstance() {
         if (instance == null) {
-            instance = new AffinityManager();
+            instance = new AffinityServices();
         }
         return instance;
     }

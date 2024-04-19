@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.UUID;
 
-public class FileServices {
+public class JSON {
 
     public static final String DATABASES_DIRECTORY = "./src/main/java/com/example/worker/databases/";
     public static final String SCHEMAS_DIRECTORY = "/schemas/";

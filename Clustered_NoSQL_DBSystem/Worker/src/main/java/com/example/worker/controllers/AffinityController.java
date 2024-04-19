@@ -1,7 +1,7 @@
 package com.example.worker.controllers;
 
 import com.example.worker.model.APIResponse;
-import com.example.worker.services.affinity.AffinityManager;
+import com.example.worker.services.affinity.AffinityServices;
 import com.example.worker.authentication.AuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 public class AffinityController {
-    private AffinityManager affinityManager = AffinityManager.getInstance();
+    private AffinityServices affinityServices = AffinityServices.getInstance();
     private AuthenticationService authenticationService;
     private Logger logger = LoggerFactory.getLogger(AffinityController.class);
 
@@ -29,7 +29,7 @@ public class AffinityController {
             logger.info("Non registered admin");
             return new APIResponse("Non registered admin!", 500);
         }
-        affinityManager.addAffinity(id, workerName);
+        affinityServices.addAffinity(id, workerName);
         logger.info("added the affinity data for id: " + id + " and workerName: " + workerName);
         return new APIResponse("Affinity data added successfully!", 200);
     }
@@ -96,12 +96,12 @@ public class AffinityController {
     public APIResponse setAffinity(
             @RequestHeader(value = "X-Username") String username,
             @RequestHeader(value = "X-Token") String token) {
-        logger.info("Current worker (" + affinityManager.getCurrentWorkerName() + ") is set to be Affinity");
+        logger.info("Current worker (" + affinityServices.getCurrentWorkerName() + ") is set to be Affinity");
         if (!authenticationService.isAuthenticatedUser(username, token)) {
             logger.info("Non registered user");
             return new APIResponse("Non registered user!", 500);
         }
-        affinityManager.setCurrentWorkerAffinity();
+        affinityServices.setCurrentWorkerAffinity();
         return new APIResponse("Affinity set successfully!", 200);
     }
 
@@ -109,24 +109,24 @@ public class AffinityController {
     public APIResponse unsetAffinity(@RequestHeader(value = "X-Username") String username,
                                      @RequestHeader(value = "X-Token") String token) {
 
-        logger.info("Current worker" + affinityManager.getCurrentWorkerName() + " is set to be not affinity!");
+        logger.info("Current worker" + affinityServices.getCurrentWorkerName() + " is set to be not affinity!");
         if (!authenticationService.isAuthenticatedUser(username, token)) {
             logger.info("Non registered user");
             return new APIResponse("Non registered user!", 500);
         }
-        affinityManager.unsetCurrentWorkerAffinity();
+        affinityServices.unsetCurrentWorkerAffinity();
         return new APIResponse("Affinity unset successfully!", 200);
     }
 
     @GetMapping("/isAffinity")
     public boolean isAffinity(@RequestHeader(value = "X-Username") String username,
                               @RequestHeader(value = "X-Token") String token) {
-        logger.info("Current worker" + affinityManager.getCurrentWorkerName() + (affinityManager.isCurrentWorkerAffinity() ? " is " : " is not ") + "affinity!");
+        logger.info("Current worker" + affinityServices.getCurrentWorkerName() + (affinityServices.isCurrentWorkerAffinity() ? " is " : " is not ") + "affinity!");
         if (!authenticationService.isAuthenticatedUser(username, token)) {
             logger.info("Non registered user");
             return false;
         }
-        return affinityManager.isCurrentWorkerAffinity();
+        return affinityServices.isCurrentWorkerAffinity();
     }
 
     @GetMapping("/setCurrentWorkerName/{name}")
@@ -138,18 +138,18 @@ public class AffinityController {
             logger.info("Non registered user");
             return new APIResponse("Non registered user!", 500);
         }
-        affinityManager.setCurrentWorkerName(name);
+        affinityServices.setCurrentWorkerName(name);
         return new APIResponse("Current worker name set successfully!", 200);
     }
 
     @GetMapping("/getCurrentWorkerName")
     public String getCurrentWorkerName(@RequestHeader(value = "X-Username") String username,
                                        @RequestHeader(value = "X-Token") String token) {
-        logger.info("Current worker name is: " + affinityManager.getCurrentWorkerName());
+        logger.info("Current worker name is: " + affinityServices.getCurrentWorkerName());
         if (!authenticationService.isAuthenticatedUser(username, token)) {
             logger.info("Non registered user");
             return null;
         }
-        return affinityManager.getCurrentWorkerName();
+        return affinityServices.getCurrentWorkerName();
     }
 }

@@ -4,7 +4,7 @@ import com.example.worker.DAO.DAO;
 import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
 import com.example.worker.model.Schema;
-import com.example.worker.services.affinity.AffinityManager;
+import com.example.worker.services.affinity.AffinityServices;
 import com.example.worker.authentication.AuthenticationService;
 import org.json.JSONArray;
 import org.slf4j.Logger;
@@ -17,9 +17,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 
-import static com.example.worker.services.FileServices.*;
-import static com.example.worker.services.affinity.AffinityManager.BOOTSTRAPPING_NODE_TOKEN;
-import static com.example.worker.services.affinity.AffinityManager.BOOTSTRAPPING_NODE_USERNAME;
+import static com.example.worker.services.JSON.*;
+import static com.example.worker.services.affinity.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
+import static com.example.worker.services.affinity.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
 
 @RestController
 @RequestMapping("/api")
@@ -29,7 +29,7 @@ public class CollectionController {
     private DAO dao = new DAO();
     private PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
     private AuthenticationService authenticationService = new AuthenticationService();
-    private AffinityManager affinityManager = AffinityManager.getInstance();
+    private AffinityServices affinityServices = AffinityServices.getInstance();
     private Logger logger = LoggerFactory.getLogger(CollectionController.class);
 
     @PostMapping("createCol/{db_name}/{collection_name}")
@@ -72,7 +72,7 @@ public class CollectionController {
         } else {
             logger.info("Started to Propagate the request.");
             // Propagate the request to the other nodes
-            for (String worker : affinityManager.getWorkers()) {
+            for (String worker : affinityServices.getWorkers()) {
                 String url = "http://" + worker + ":8081/api/createCol/" + dbName + "/" + collectionName;
                 HttpHeaders headers = new HttpHeaders();
                 headers.set("X-Propagated-Request", "true");
@@ -141,7 +141,7 @@ public class CollectionController {
             }
         } else {
             // Propagate the request to the other nodes
-            for (String worker : affinityManager.getWorkers()) {
+            for (String worker : affinityServices.getWorkers()) {
                 String url = "http://" + worker + ":/api/deleteCol/" + dbName.toLowerCase() + "/" + collectionName.toLowerCase();
                 HttpHeaders headers = new HttpHeaders();
                 headers.set("X-Propagated-Request", "true");

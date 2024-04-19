@@ -12,7 +12,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static com.example.worker.services.FileServices.readFileAsString;
+import static com.example.worker.services.JSON.readFileAsString;
 
 public class DAO {
     private final Object lock = new Object(); // lock object for synchronization

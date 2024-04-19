@@ -3,7 +3,7 @@ package com.example.worker.controllers;
 import com.example.worker.DAO.DAO;
 import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
-import com.example.worker.services.affinity.AffinityManager;
+import com.example.worker.services.affinity.AffinityServices;
 import com.example.worker.authentication.AuthenticationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,16 +24,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
-import static com.example.worker.services.FileServices.*;
-import static com.example.worker.services.affinity.AffinityManager.BOOTSTRAPPING_NODE_TOKEN;
-import static com.example.worker.services.affinity.AffinityManager.BOOTSTRAPPING_NODE_USERNAME;
+import static com.example.worker.services.JSON.*;
+import static com.example.worker.services.affinity.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
+import static com.example.worker.services.affinity.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
 
 @RestController
 @RequestMapping("/api")
 public class DocumentController {
     private DAO dao = new DAO();
     private PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
-    private AffinityManager affinityManager = AffinityManager.getInstance();
+    private AffinityServices affinityServices = AffinityServices.getInstance();
     private RestTemplate restTemplate = new RestTemplate();
     private AuthenticationService authenticationService = new AuthenticationService();
     private Logger logger = LoggerFactory.getLogger(DocumentController.class);
@@ -114,10 +114,10 @@ public class DocumentController {
 
 
         // the current worker is the affinity worker
-        if (affinityManager.isCurrentWorkerAffinity()) {
+        if (affinityServices.isCurrentWorkerAffinity()) {
             json = addIdToDocument(json);
             // propagating the new document to all workers
-            for (String worker : affinityManager.getWorkers()) {
+            for (String worker : affinityServices.getWorkers()) {
                 String url = "http://" + worker + ":8081/api/insertDoc/" + dbName + "/" + collectionName;
                 headers.set("X-Propagated-Request", "true");
                 HttpEntity<String> requestEntity = new HttpEntity<>(json, headers);
@@ -128,21 +128,21 @@ public class DocumentController {
             String id = jsonObject.getString("_id");
 
             // propagating the affinity data to all workers
-            affinityManager.propagateAddingAffinity(id, affinityManager.getCurrentWorkerName());
+            affinityServices.propagateAddingAffinity(id, affinityServices.getCurrentWorkerName());
 
             // Passing the affinity worker to the next worker
             passTheAffinityToNextWorker();
         } else {
-            logger.info("The current worker: " + affinityManager.getCurrentWorkerName() + " is not the affinity worker");
+            logger.info("The current worker: " + affinityServices.getCurrentWorkerName() + " is not the affinity worker");
             // The current worker is not the affinity worker
             // search for the affinity worker.
-            for (String worker : affinityManager.getWorkers()) {
+            for (String worker : affinityServices.getWorkers()) {
                 {
                     String url = "http://" + worker + ":8081/api/isAffinity";
                     HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
                     ResponseEntity<Boolean> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Boolean.class);
                     if (responseEntity.getBody()) {
-                        logger.info("The current worker: " + affinityManager.getCurrentWorkerName() + " is not the " +
+                        logger.info("The current worker: " + affinityServices.getCurrentWorkerName() + " is not the " +
                                 "affinity, The affinity worker is: {}", worker);
                         String affinityUrl = "http://" + worker + ":8081/api/insertDoc/" + dbName + "/" + collectionName;
                         HttpEntity<String> affinityRequestEntity = new HttpEntity<>(json, headers);
@@ -157,10 +157,10 @@ public class DocumentController {
     }
 
     private void passTheAffinityToNextWorker() {
-        affinityManager.unsetCurrentWorkerAffinity();
+        affinityServices.unsetCurrentWorkerAffinity();
 
         // first getting the name of the current worker
-        String currentWorkerName = affinityManager.getCurrentWorkerName(), nextWorkerName;
+        String currentWorkerName = affinityServices.getCurrentWorkerName(), nextWorkerName;
         if (currentWorkerName.equals("worker1")) {
             nextWorkerName = "worker2";
         } else if (currentWorkerName.equals("worker2")) {
@@ -289,7 +289,7 @@ public class DocumentController {
         if (propagatedRequest) {
             if (dao.deleteDoc(currentContent, collectionFile, docId)) {
                 propertyIndexManager.clearDocumentIndexing(dbName, collectionName, docId);
-                affinityManager.removeAffinity(docId);
+                affinityServices.removeAffinity(docId);
                 return new APIResponse("Document deleted successfully.", 200);
             } else {
                 return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
@@ -297,7 +297,7 @@ public class DocumentController {
         }
 
         // getting the owner affinity port for the document
-        String affinityName = affinityManager.getAffinityName(docId);
+        String affinityName = affinityServices.getAffinityName(docId);
         if (affinityName == null) {
             return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
         }
@@ -306,9 +306,9 @@ public class DocumentController {
         headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
 
         // the document is owned by the current worker
-        if (affinityName.equals(affinityManager.getCurrentWorkerName())) {
+        if (affinityName.equals(affinityServices.getCurrentWorkerName())) {
             logger.info("propagating delete request to all workers");
-            for (String worker : affinityManager.getWorkers()) {
+            for (String worker : affinityServices.getWorkers()) {
                 String url = "http://" + worker + ":8081/api/deleteDoc/" + dbName + "/" + collectionName + "/" + docId;
                 headers.set("X-Propagated-Request", "true");
                 HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
@@ -413,13 +413,13 @@ public class DocumentController {
         }
 
         // getting the owner affinity port for the document
-        String affinityName = affinityManager.getAffinityName(docId);
+        String affinityName = affinityServices.getAffinityName(docId);
         if (affinityName == null) {
             return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
         }
 
         // if the owner affinity port is the current port
-        if (affinityName.equals(affinityManager.getCurrentWorkerName())) {
+        if (affinityName.equals(affinityServices.getCurrentWorkerName())) {
             // Check whether the old value matches the value inside the affinity node.
             // (Optimistic locking rules)
             if (oldValue != null) {
@@ -432,7 +432,7 @@ public class DocumentController {
 
             logger.info("propagating the update request to all the nodes...");
             // Propagate the request to all the nodes.
-            for (String worker : affinityManager.getWorkers()) {
+            for (String worker : affinityServices.getWorkers()) {
                 String url = "http://" + worker + ":8081/api/updateDoc/" + dbName + "/" +
                         collectionName + "/" + docId + "/" + propertyName + "/" + newValue;
                 HttpHeaders headers = new HttpHeaders();
