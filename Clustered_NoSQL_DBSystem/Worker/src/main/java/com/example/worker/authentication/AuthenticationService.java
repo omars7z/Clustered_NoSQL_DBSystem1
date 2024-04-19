@@ -42,7 +42,7 @@ public class AuthenticationService {
         jsonObject.put("username", username);
         jsonObject.put("token", token);
         jsonArray.put(jsonObject);
-        
+
         try {
 
             FileWriter fileWriter = new FileWriter(usersCollection);

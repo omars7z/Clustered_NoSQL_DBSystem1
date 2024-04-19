@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+
 @RestController
 @RequestMapping("/api")
 public class AuthenticationController {
@@ -50,7 +52,7 @@ public class AuthenticationController {
     @GetMapping("addAdmin/{newAdminame}/{newAdminToken}")
     public APIResponse addAdmin(@PathVariable("newAdminame") String newUsername, @PathVariable("newAdminToken") String newAdminToken
             , @RequestHeader(value = "X-Username") String adminUserName
-            , @RequestHeader(value = "X-Token") String adminToken) {
+            , @RequestHeader(value = "X-Token") String adminToken) throws IOException {
 
         if (!authenticationService.isAdmin(adminUserName, adminToken)) {
             return new APIResponse("Non registered admin hasn't the ability to add new admins!", 500);

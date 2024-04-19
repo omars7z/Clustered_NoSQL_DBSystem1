@@ -43,7 +43,7 @@ public class CollectionController {
             @RequestHeader(value = "X-Token") String token
     ) {
         logger.info("Received request to create collection " + collectionName + " in database " + dbName
-                + (PropagatedRequest ? " (propagated)" : "") + " from user " + username);
+                + (PropagatedRequest ? " (propagated successfully!)" : "") + " from user: " + username);
 
         dbName = dbName.toLowerCase();
         collectionName = collectionName.toLowerCase();
@@ -85,7 +85,7 @@ public class CollectionController {
             }
         }
 
-        logger.info("Created collection " + collectionName + " in database " + dbName + "successfully!");
+        logger.info("Created collection " + collectionName + " in database " + dbName + " successfully!");
         return response;
     }
 
