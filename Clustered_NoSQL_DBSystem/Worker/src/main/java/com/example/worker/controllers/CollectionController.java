@@ -1,46 +1,28 @@
 package com.example.worker.controllers;
 
-import com.example.worker.DAO.DAO;
 import com.example.worker.authentication.AuthenticationService;
-import com.example.worker.indexing.PropertyIndexManager;
 import com.example.worker.model.APIResponse;
-import com.example.worker.model.Schema;
-import com.example.worker.services.AffinityServices;
-import com.example.worker.threading.AuthLock;
-import org.json.JSONArray;
+    import com.example.worker.model.Schema;
+import com.example.worker.services.ColService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 
 import static com.example.worker.File.JSON.*;
-import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
-import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
 
 @RestController
 @RequestMapping("/api")
 public class CollectionController {
 
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final Object lock = new Object(); // lock object for synchronization
-    private final DAO dao;
-    private final PropertyIndexManager propertyIndexManager;
-    private AuthenticationService authenticationService;
-    private final AffinityServices affinityServices;
+    private final ColService colService;
+    private final AuthenticationService authenticationService;
     private final Logger logger = LoggerFactory.getLogger(CollectionController.class);
 
-    public CollectionController(AuthLock authLock, DAO dao, PropertyIndexManager propertyIndexManager,
-                                AuthenticationService authenticationService, AffinityServices affinityServices) {
-        this.dao = dao;
-        this.propertyIndexManager = propertyIndexManager;
+    public CollectionController(ColService colService, AuthenticationService authenticationService) {
+        this.colService = colService;
         this.authenticationService = authenticationService;
-        this.affinityServices = affinityServices;
-        this.authenticationService = new AuthenticationService(authLock);
     }
 
     @PostMapping("createCol/{db_name}/{collection_name}")
@@ -64,39 +46,11 @@ public class CollectionController {
             return new APIResponse("User is not authorized.", 401);
         }
 
-        File collectionFile = new File(DATABASES_DIRECTORY + dbName + "/" + collectionName + ".json");
-        APIResponse response = new APIResponse("", 200);
-
         if (propagatedRequest) {
-            logger.info("Propagated Request Successfully!");
-            if (collectionFile.exists()) {
-                logger.warn("Collection already exists.");
-                response.setMessage("Collection already exists.");
-                response.setStatusCode(400);
-            } else {
-                File schemaFile = new File(DATABASES_DIRECTORY + dbName + SCHEMAS_DIRECTORY + collectionName + ".json");
-                dao.createCollection(collectionFile, schemaFile, schema);
-                response.setMessage("Collection created successfully.");
-                response.setStatusCode(200);
-            }
+            return colService.handlePropagatedCreateCollection(dbName, collectionName, new File(DATABASES_DIRECTORY + dbName), schema);
         } else {
-            logger.info("Started to Propagate the request.");
-            // Propagate the request to the other nodes
-            for (String worker : affinityServices.getWorkers()) {
-                String url = "http://" + worker + ":8081/api/createCol/" + dbName + "/" + collectionName;
-                HttpHeaders headers = new HttpHeaders();
-                headers.set("X-Propagated-Request", "true");
-                headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-                headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
-                HttpEntity<Schema> requestEntity = new HttpEntity<>(schema, headers);
-                restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
-                response.setMessage("Collection created successfully.");
-                response.setStatusCode(200);
-            }
+            return colService.propagateCreateCollectionRequest(dbName, collectionName, schema);
         }
-
-        logger.info("Created collection {} in database {} successfully!", collectionName, dbName);
-        return response;
     }
 
     @DeleteMapping("/deleteCol/{db_name}/{collection_name}")
@@ -104,64 +58,26 @@ public class CollectionController {
     public APIResponse deleteCollection(
             @PathVariable("db_name") String dbName,
             @PathVariable("collection_name") String collectionName,
-            @RequestHeader(value = "X-Propagated-Request", defaultValue = "false") boolean PropagatedRequest,
+            @RequestHeader(value = "X-Propagated-Request", defaultValue = "false") boolean propagatedRequest,
             @RequestHeader(value = "X-Username") String username,
             @RequestHeader(value = "X-Token") String token
     ) {
         logger.info("Received request to delete collection '{}.{}' {}", dbName, collectionName,
-                (PropagatedRequest ? "(propagated)" : ""));
+                (propagatedRequest ? "(propagated)" : ""));
 
         dbName = dbName.toLowerCase();
         collectionName = collectionName.toLowerCase();
+
         if (!authenticationService.isAuthenticatedUser(username, token)) {
             logger.warn("User is not authorized to delete collection '{}.{}'.", dbName, collectionName);
             return new APIResponse("User is not authorized.", 401);
         }
 
-        File collectionFile = new File(DATABASES_DIRECTORY + dbName + "/" + collectionName + ".json");
-        APIResponse response = new APIResponse("", 200);
-
-        if (!collectionFile.exists()) {
-            logger.warn("Collection '{}.{}' does not exist.", dbName, collectionName);
-            response.setMessage("Collection does not exist.");
-            response.setStatusCode(400);
-            return response;
-        }
-
-        if (PropagatedRequest) {
-            // clearing the cache and the indexing
-            try {
-                dao.clearCollectionCaching(collectionFile);
-                propertyIndexManager.clearCollectionIndexing(dbName, collectionName);
-                File schemaFile = new File(DATABASES_DIRECTORY + dbName + SCHEMAS_DIRECTORY + collectionName + ".json");
-
-                synchronized (lock) {
-                    collectionFile.delete();
-                    schemaFile.delete();
-                }
-
-                logger.info("Collection '{}.{}' deleted successfully.", dbName, collectionName);
-                response.setMessage("Collection deleted successfully.");
-                response.setStatusCode(200);
-
-            } catch (Exception e) {
-                logger.error("Error deleting collection '{}.{}'.", dbName, collectionName, e);
-                response.setMessage("Error deleting collection.");
-                response.setStatusCode(500);
-            }
+        if (propagatedRequest) {
+            return colService.handlePropagatedDeleteCollection(dbName, collectionName, new File(DATABASES_DIRECTORY + dbName));
         } else {
-            // Propagate the request to the other nodes
-            for (String worker : affinityServices.getWorkers()) {
-                String url = "http://" + worker + ":/api/deleteCol/" + dbName.toLowerCase() + "/" + collectionName.toLowerCase();
-                HttpHeaders headers = new HttpHeaders();
-                headers.set("X-Propagated-Request", "true");
-                headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-                headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
-                HttpEntity<String> requestEntity = new HttpEntity<>(headers);
-                restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, String.class);
-            }
+            return colService.propagateDeleteCollectionRequest(dbName, collectionName);
         }
-        return response;
     }
 
     @GetMapping("/filter/{db_name}/{collectionName}")
@@ -182,58 +98,21 @@ public class CollectionController {
             return new APIResponse("User is not authorized.", 401);
         }
 
-        File dbDirectory = new File(DATABASES_DIRECTORY + dbName);
-        if (!dbDirectory.exists() && !dbDirectory.isDirectory()) {
-            logger.error("Database does not exist. dbName={}", dbName);
-            return new APIResponse("Database does not exist.", 400);
-        }
-
-        File collectionFile = new File(DATABASES_DIRECTORY + dbName + "/" + collectionName + ".json");
-        APIResponse response = new APIResponse("", 200);
-
-        if (!collectionFile.exists()) {
-            logger.error("Collection does not exist. dbName={}, collectionName={}", dbName, collectionName);
-            response.setMessage("Collection does not exist.");
-            response.setStatusCode(400);
-            return response;
-        }
-
-        // First, check if the index exists
-        JSONArray collections = propertyIndexManager.getMatchingDocs(dbName, collectionName, attributeName, attributeValue);
-        if (collections != null) {
-            logger.info("Filtered data retrieved from property index. dbName={}, collectionName={}, attributeName={}, attributeValue={}", dbName, collectionName, attributeName, attributeValue);
-            response.setMessage(collections.toString());
-            response.setStatusCode(200);
-            return response;
-        }
-
-        // else, read it from the file system
-        JSONArray filteredData = dao.getFilteredData(collectionFile, attributeName, attributeValue);
-        logger.info("Filtered data retrieved from file system. dbName={}, collectionName={}, attributeName={}, attributeValue={}", dbName, collectionName, attributeName, attributeValue);
-        response.setMessage(filteredData.toString());
-        response.setStatusCode(200);
-
-        return response;
+        return colService.filterCollection(dbName, collectionName, attributeName, attributeValue);
     }
 
-    @GetMapping("getCollections/{db_name}")
-    public APIResponse getCollections(@PathVariable("db_name") String dbName,
-                                      @RequestHeader(value = "X-Username") String username,
-                                      @RequestHeader(value = "X-Token") String token) {
-        logger.info("Received request to get all collections in database '{}'", dbName);
+//    @GetMapping("getCollections/{db_name}")
+//    public APIResponse getCollections(@PathVariable("db_name") String dbName,
+//                                      @RequestHeader(value = "X-Username") String username,
+//                                      @RequestHeader(value = "X-Token") String token) {
+//        logger.info("Received request to get all collections in database '{}'", dbName);
+//
+//        dbName = dbName.toLowerCase();
+//        if (!authenticationService.isAuthenticatedUser(username, token)) {
+//            return new APIResponse("User is not authorized.", 401);
+//        }
+//
+//        return colService.getCollections(dbName);
+//    }
 
-        dbName = dbName.toLowerCase();
-        if (!authenticationService.isAuthenticatedUser(username, token)) {
-            return new APIResponse("User is not authorized.", 401);
-        }
-
-        File dbDirectory = new File(DATABASES_DIRECTORY + dbName);
-        if (!isDatabaseExists(dbDirectory)) {
-            logger.error("Database does not exist. dbName={}", dbName);
-            return new APIResponse("Database does not exist.", 400);
-        }
-
-        logger.info("Finished getting all collections in database '{}'", dbName);
-        return new APIResponse(dao.allCollections(dbDirectory), 200);
-    }
 }

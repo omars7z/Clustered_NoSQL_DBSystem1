@@ -430,7 +430,7 @@ public class DocumentController {
                 String currentObjectValue = currentObject.get(propertyName).toString();
                 if (!oldValue.equals(currentObjectValue)) {
                     return new APIResponse("version of this document doesn't match the up-to-date document " +
-                                    "(optimistic looking rules violation)", 400);
+                            "(optimistic looking rules violation)", 400);
                 }
             }
 

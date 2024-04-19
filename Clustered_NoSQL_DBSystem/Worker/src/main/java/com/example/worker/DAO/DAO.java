@@ -121,6 +121,26 @@ public class DAO implements DAOInterface{
         }
     }
 
+    @Override
+    public JSONArray getFilteredData(File collectionFile, String attributeName, String attributeValue) {
+        JSONArray collectionData = cache.get(collectionFile.getName());
+
+        if (collectionData == null) {
+            collectionData = new JSONArray(readFileAsString(collectionFile));
+        }
+
+        JSONArray filteredArray = new JSONArray();
+        for (int i = 0; i < collectionData.length(); i++) {
+            JSONObject obj = collectionData.getJSONObject(i);
+            if (obj.has(attributeName) && obj.get(attributeName).toString().equals(attributeValue)) {
+                filteredArray.put(obj);
+            }
+        }
+
+        Threads.synchronizedPut(cache, collectionFile, collectionData); // Safely put data into cache
+        return filteredArray;
+    }
+
     @Async
     @Override
     public boolean updateDoc(File collectionFile, String docId, JSONObject newObj) {
@@ -143,26 +163,6 @@ public class DAO implements DAOInterface{
             }
         }
         return false;
-    }
-
-    @Override
-    public JSONArray getFilteredData(File collectionFile, String attributeName, String attributeValue) {
-        JSONArray collectionData = cache.get(collectionFile.getName());
-
-        if (collectionData == null) {
-            collectionData = new JSONArray(readFileAsString(collectionFile));
-        }
-
-        JSONArray filteredArray = new JSONArray();
-        for (int i = 0; i < collectionData.length(); i++) {
-            JSONObject obj = collectionData.getJSONObject(i);
-            if (obj.has(attributeName) && obj.get(attributeName).toString().equals(attributeValue)) {
-                filteredArray.put(obj);
-            }
-        }
-
-        Threads.synchronizedPut(cache, collectionFile, collectionData); // Safely put data into cache
-        return filteredArray;
     }
 
     @Override
