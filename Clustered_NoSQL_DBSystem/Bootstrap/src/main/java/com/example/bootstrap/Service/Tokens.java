@@ -1,6 +1,5 @@
 package com.example.bootstrap.Service;
 
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -10,36 +9,49 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 @Service
 public class Tokens {
-    private static final String tokensFilePath = "src/main/resources/static/tokens.json";
-    private static Tokens instance;
 
-    // three hours
-    private final Long expirationTime = 1000L * 60 * 60 * 3;
-    // 30 minutes
-    private final Long checkForExpiredTokensInterval = 1000L * 60 * 30;
-    private File tokensFile;
-    private Logger logger = Logger.getLogger(Tokens.class.getName());
+    private static final String TOKENS_FILE_PATH = "src/main/resources/static/tokens.json";
+    private static Tokens instance;
+    private final long expirationTime = TimeUnit.HOURS.toMillis(3);
+
+    private final File tokensFile;
+    private final Logger logger = Logger.getLogger(Tokens.class.getName());
 
     private Tokens() {
-        tokensFile = new File(tokensFilePath);
+        tokensFile = new File(TOKENS_FILE_PATH);
     }
 
     public static Tokens getInstance() {
-        if (instance == null)
+        if (instance == null) {
             instance = new Tokens();
+        }
         return instance;
     }
 
-    private static String readFileAsString(File file) {
+    private String readFileAsString(File file) {
         try {
             return new String(Files.readAllBytes(Paths.get(file.getPath())));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error reading file: " + file.getPath(), e);
         }
+    }
+
+    private void writeTokensToFile(JSONArray jsonArray) {
+        try {
+            Files.write(Paths.get(TOKENS_FILE_PATH), jsonArray.toString().getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException("Error writing to file: " + TOKENS_FILE_PATH, e);
+        }
+    }
+
+    public String allUsers() {
+        return readFileAsString(tokensFile);
     }
 
     public void addNewToken(String userName, String token, String workerName) {
@@ -49,73 +61,53 @@ public class Tokens {
         jsonObject.put("workerName", workerName);
         jsonObject.put("expirationTime", System.currentTimeMillis() + expirationTime);
 
-        String content = readFileAsString(tokensFile);
-        JSONArray jsonArray = new JSONArray(content);
+        String info = readFileAsString(tokensFile);
+        JSONArray jsonArray = new JSONArray(info);
         jsonArray.put(jsonObject);
-
-        try {
-            Files.write(Paths.get(tokensFilePath), jsonArray.toString().getBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeTokensToFile(jsonArray);
     }
 
-    @Scheduled(fixedRate = 1800000)
-    public void removeExpiredTokens() {
-        logger.info("Checking for expired tokens - new cycle -");
+    public void removeUser(String token) {
+        String info = readFileAsString(tokensFile);
+        JSONArray jsonArray = new JSONArray(info);
 
-        String content = readFileAsString(tokensFile);
-        JSONArray jsonArray = new JSONArray(content);
-
-        for (int i = jsonArray.length() - 1; i >= 0; i--) {
+        for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonObject = jsonArray.getJSONObject(i);
-            Long expirationTime = jsonObject.getLong("expirationTime");
+            String currentToken = jsonObject.getString("token");
+            if (currentToken.equals(token)) {
+                String userName = jsonObject.getString("userName");
+                String workerName = jsonObject.getString("workerName");
+
+                // Sending a request to the worker to remove the registered user.
+                Cluster.getInstance().removeExpiredToken(userName, token, workerName);
+                jsonArray.remove(i); // Remove the user from the JSONArray
+                break;
+            }
+        }
+        writeTokensToFile(jsonArray);
+    }
+
+    @Scheduled(fixedRate = 900000)
+    public void removeExpiredTokens() {
+
+        logger.info("Checking for expired tokens");
+
+        String info = readFileAsString(tokensFile);
+        JSONArray jsonArray = new JSONArray(info);
+
+        for (Iterator<Object> iterator = jsonArray.iterator(); iterator.hasNext(); ) {
+            JSONObject jsonObject = (JSONObject) iterator.next();
+            long expirationTime = jsonObject.getLong("expirationTime");
 
             if (System.currentTimeMillis() > expirationTime) {
                 String userName = jsonObject.getString("userName");
                 String token = jsonObject.getString("token");
                 String workerName = jsonObject.getString("workerName");
 
-                // Sending a request to the worker to remove the registered user.
                 Cluster.getInstance().removeExpiredToken(userName, token, workerName);
-
-                // Removing the User from the tokens.json file
-                jsonArray.remove(i);
+                iterator.remove(); // remove expired token from the JSONArray
             }
         }
-        try {
-            Files.write(Paths.get(tokensFilePath), jsonArray.toString().getBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public String allUsers() {
-        return readFileAsString(tokensFile);
-    }
-
-    public void removeUser(String token) {
-        String content = readFileAsString(tokensFile);
-        JSONArray jsonArray = new JSONArray(content);
-
-        for (int i = jsonArray.length() - 1; i >= 0; i--) {
-            JSONObject jsonObject = jsonArray.getJSONObject(i);
-            String currentToken = jsonObject.getString("token");
-            if (currentToken.equals(token)) {
-                String userName = jsonObject.getString("userName");
-                String workerName = jsonObject.getString("workerName");
-                // Sending a request to the worker to remove the registered user.
-                Cluster.getInstance().removeExpiredToken(userName, token, workerName);
-                jsonArray.remove(i);
-                break;
-            }
-        }
-
-        // writing the new content to the tokens.json file
-        try {
-            Files.write(Paths.get(tokensFilePath), jsonArray.toString().getBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeTokensToFile(jsonArray);
     }
 }

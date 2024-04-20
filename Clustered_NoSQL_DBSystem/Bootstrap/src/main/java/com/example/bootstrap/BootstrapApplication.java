@@ -9,9 +9,10 @@ public class BootstrapApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(BootstrapApplication.class, args);
+        startApp();
+    }
 
-
-        // Starting Up The Cluster
+    private static void startApp(){
         Cluster.getInstance().setUpWorkersNames();
         Cluster.getInstance().setFirstWorkerAsAffinity();
     }
