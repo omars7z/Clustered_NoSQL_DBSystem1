@@ -24,12 +24,12 @@ import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_US
 @RestController
 @RequestMapping("/api")
 public class DatabaseController {
-    private DAO dao = new DAO();
+    private final DAO dao = new DAO();
     private PropertyIndexManager propertyIndexManager = PropertyIndexManager.getInstance();
-    private AuthenticationService authenticationService;
-    private RestTemplate restTemplate = new RestTemplate();
-    private AffinityServices affinityservices = AffinityServices.getInstance();
-    private Logger logger = LoggerFactory.getLogger(CollectionController.class);
+    private final AuthenticationService authenticationService;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final AffinityServices affinityservices = AffinityServices.getInstance();
+    private final Logger logger = LoggerFactory.getLogger(CollectionController.class);
 
     public DatabaseController(AuthenticationService authenticationService){
         this.authenticationService = authenticationService;
