@@ -12,8 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
@@ -26,13 +24,57 @@ import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_US
 @Service
 public class DBService {
 
-    private DAO dao = new DAO();
-    private AuthenticationService authenticationService;
-    private RestTemplate restTemplate;
-    private AffinityServices affinityServices;
-    private final Logger logger = LoggerFactory.getLogger(DatabaseController.class);
+    private final DAO dao = new DAO();
+    private final AffinityServices affinityServices = AffinityServices.getInstance();
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final Logger logger = LoggerFactory.getLogger(DBService.class);
 
-    private APIResponse propagateCreateDatabaseRequest(String name) {
+    public APIResponse createDatabase(String name, boolean propagatedRequest) {
+        File dbDirectory = new File(DATABASES_DIRECTORY + name);
+        if (dbDirectory.exists() && dbDirectory.isDirectory()) {
+            logger.warn("Database already exists.");
+            return new APIResponse("Database already exists.", 400);
+        }
+
+        if (!propagatedRequest) {
+            propagateCreateDatabaseRequest(name);
+        } else {
+            if (!dbDirectory.mkdirs()) {
+                logger.error("Error creating database.");
+                return new APIResponse("Error creating database.", 500);
+            } else {
+                File schemasDirectory = new File(DATABASES_DIRECTORY + name + SCHEMAS_DIRECTORY);
+                schemasDirectory.mkdirs();
+            }
+        }
+
+        logger.info("Database created successfully.");
+        return new APIResponse("Database created successfully.", 200);
+    }
+
+    public APIResponse deleteDatabase(String name, boolean propagatedRequest) {
+        File dbDirectory = new File(DATABASES_DIRECTORY + name);
+        if (!dbDirectory.exists() && !dbDirectory.isDirectory()) {
+            logger.warn("Database does not exist.");
+            return new APIResponse("Database does not exist.", 400);
+        }
+
+        if (propagatedRequest) {
+            try {
+                dao.clearDBCache(dbDirectory);
+                FileUtils.deleteDirectory(dbDirectory);
+            } catch (Exception e) {
+                return new APIResponse("Error deleting database.", 500);
+            }
+        } else {
+            propagateDeleteDatabaseRequest(name);
+        }
+
+        logger.info("Database deleted successfully.");
+        return new APIResponse("Database deleted successfully.", 200);
+    }
+
+    private void propagateCreateDatabaseRequest(String name) {
         logger.info("Propagating request to other nodes.");
         for (String worker : affinityServices.getWorkers()) {
             String url = "http://" + worker + ":8081/api/createDB/" + name;
@@ -43,35 +85,9 @@ public class DBService {
             HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
             restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
         }
-        return new APIResponse("Propagating request to other nodes.", HttpStatus.OK.value());
     }
 
-    private APIResponse handlePropagatedCreateDatabase(String name, File dbDirectory) {
-        try {
-            dbDirectory.mkdirs();
-            File schemasDirectory = new File(DATABASES_DIRECTORY + name + SCHEMAS_DIRECTORY);
-            schemasDirectory.mkdirs();
-            logger.info("Database created successfully.");
-            return new APIResponse("Database created successfully.", HttpStatus.OK.value());
-        } catch (Exception e) {
-            logger.error("Error creating database.", e);
-            return new APIResponse("Error creating database.", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        }
-    }
-
-    private APIResponse handlePropagatedDeleteDatabase(String name, File dbDirectory) {
-        try {
-            dao.clearDBCache(dbDirectory);
-            FileUtils.deleteDirectory(dbDirectory);
-            logger.info("Database deleted successfully.");
-            return new APIResponse("Database deleted successfully.", HttpStatus.OK.value());
-        } catch (Exception e) {
-            logger.error("Error deleting database.", e);
-            return new APIResponse("Error deleting database.", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        }
-    }
-
-    private APIResponse propagateDeleteDatabaseRequest(String name) {
+    private void propagateDeleteDatabaseRequest(String name) {
         logger.info("Propagating request to other nodes.");
         for (String worker : affinityServices.getWorkers()) {
             String url = "http://" + worker + ":8081/api/deleteDB/" + name;
@@ -82,6 +98,5 @@ public class DBService {
             HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
             restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, String.class);
         }
-        return new APIResponse("Propagating request to other nodes.", HttpStatus.OK.value());
     }
 }

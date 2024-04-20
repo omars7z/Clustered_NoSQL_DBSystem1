@@ -83,6 +83,21 @@ public class DatabaseController {
         return new APIResponse("Database created successfully.", 200);
     }
 
+    @GetMapping("/listDB")
+    public APIResponse listDatabases(@RequestHeader(value = "X-Username") String username,
+                                     @RequestHeader(value = "X-Token") String token) {
+        logger.info("Requesting list of databases.");
+
+        if (!authenticationService.isAuthenticatedUser(username, token)) {
+            logger.warn("User is not authorized.");
+            return new APIResponse("User is not authorized.", 401);
+        }
+
+        File dbDirectory = new File(DATABASES_DIRECTORY);
+
+        return new APIResponse(dao.allDbs(dbDirectory), 200);
+    }
+
     @DeleteMapping("deleteDB/{name}")
     public APIResponse deleteDatabase(@PathVariable("name") String name
             , @RequestHeader(value = "X-Propagated-Request", defaultValue = "false") boolean propagatedRequest,
@@ -125,20 +140,5 @@ public class DatabaseController {
 
         logger.info("Database deleted successfully.");
         return new APIResponse("Database deleted successfully.", 200);
-    }
-
-    @GetMapping("/listDB")
-    public APIResponse listDatabases(@RequestHeader(value = "X-Username") String username,
-                                     @RequestHeader(value = "X-Token") String token) {
-        logger.info("Requesting list of databases.");
-
-        if (!authenticationService.isAuthenticatedUser(username, token)) {
-            logger.warn("User is not authorized.");
-            return new APIResponse("User is not authorized.", 401);
-        }
-
-        File dbDirectory = new File(DATABASES_DIRECTORY);
-
-        return new APIResponse(dao.allDbs(dbDirectory), 200);
     }
 }

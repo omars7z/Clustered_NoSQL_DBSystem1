@@ -13,19 +13,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.example.worker.File.JSON.DATABASES_DIRECTORY;
 import static com.example.worker.File.JSON.readFileAsString;
 
-// Singleton class for managing property indexing.
 @Repository
 public class PropertyIndexManager {
-    // Singleton instance.
     private static PropertyIndexManager instance = new PropertyIndexManager();
 
-    // Map for storing property index values and associated document arrays.
     private static Map<PropertyIndex, JSONArray> propertyIndexMap = new ConcurrentHashMap<>();
 
     private PropertyIndexManager() {
     }
 
-    public static void buildInitialIndexing() {
+    public static void buildIndexing() {
         File dbsDir = new File(DATABASES_DIRECTORY);
         for (String dbName : dbsDir.list()) {
             File dbDir = new File(DATABASES_DIRECTORY + dbName);

@@ -77,18 +77,19 @@ public class StudentServices {
 
     public String allStudents(HttpSession httpSession) {
         String workerPort = httpSession.getAttribute("workerPort").toString();
-        String token = httpSession.getAttribute("token").toString();
         String username = httpSession.getAttribute("username").toString();
+        String token = httpSession.getAttribute("token").toString();
 
         System.out.println("workerPort: " + workerPort);
-        System.out.println("token: " + token);
         System.out.println("username: " + username);
+        System.out.println("token: " + token);
 
         String url = "http://localhost:" + workerPort + "/api/getAllDocs/classSystem/students";
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Username", username);
         headers.set("X-Token", token);
         headers.set("Content-Type", "application/json");
+//        headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
         return restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class).getBody();

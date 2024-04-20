@@ -14,16 +14,9 @@ import java.util.UUID;
 
 public class JSON {
 
-    private static JSON instance;
     public static final String DATABASES_DIRECTORY = "./src/main/java/com/example/worker/databases/";
     public static final String SCHEMAS_DIRECTORY = "/schemas/";
 
-    public static JSON getInstance(){
-        if (instance == null) {
-            instance = new JSON();
-        }
-        return instance;
-    }
 
     public static String readFileAsString(File file) {
         try {

@@ -13,6 +13,6 @@ public class WorkerApplication {
     }
 
     private static void startup(){
-        PropertyIndexManager.buildInitialIndexing();
+        PropertyIndexManager.buildIndexing();
     }
 }

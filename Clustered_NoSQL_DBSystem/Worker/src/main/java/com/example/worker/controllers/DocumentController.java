@@ -42,6 +42,7 @@ public class DocumentController {
     public DocumentController(AuthLock authLock) {
         this.authenticationService = new AuthenticationService(authLock);
     }
+
     public boolean validJSONObject(String json, File schemaFile) {
         try {
             String withoutId = removeIdFromDoc(json);
