@@ -80,7 +80,6 @@ public class GetController {
         JSONObject response = new JSONObject(students);
         JSONArray studentsArray = new JSONArray(response.get("message").toString());
         logger.info("Students: " + studentsArray.toString());
-
         model.addAttribute("students", studentsArray);
         return "show-students-accounts";
     }

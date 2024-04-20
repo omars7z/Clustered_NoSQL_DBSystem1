@@ -18,7 +18,7 @@ public class Tokens {
 
     private static final String TOKENS_FILE_PATH = "src/main/resources/static/tokens.json";
     private static Tokens instance;
-    private final long expirationTime = TimeUnit.HOURS.toMillis(3);
+    private final long expirationTime = TimeUnit.HOURS.toMillis(1);
 
     private final File tokensFile;
     private final Logger logger = Logger.getLogger(Tokens.class.getName());
@@ -86,6 +86,7 @@ public class Tokens {
         }
         writeTokensToFile(jsonArray);
     }
+
 
     @Scheduled(fixedRate = 900000)
     public void removeExpiredTokens() {
