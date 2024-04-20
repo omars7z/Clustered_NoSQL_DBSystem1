@@ -1,4 +1,4 @@
-package com.example.bootstrap;
+package com.example.bootstrap.Service;
 
 
 import org.json.JSONArray;
@@ -60,7 +60,7 @@ public class Tokens {
         }
     }
 
-    @Scheduled(fixedRate = 3000000)
+    @Scheduled(fixedRate = 1800000)
     public void removeExpiredTokens() {
         logger.info("Checking for expired tokens - new cycle -");
 

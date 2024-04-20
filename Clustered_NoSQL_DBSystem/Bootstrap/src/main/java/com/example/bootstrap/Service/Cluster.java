@@ -1,5 +1,6 @@
-package com.example.bootstrap;
+package com.example.bootstrap.Service;
 
+import com.example.bootstrap.Model.APIResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -36,7 +37,7 @@ public class Cluster {
         logger.info("Removing expired token from " + workerName + "user name: " + username + " token: " + token);
         String url = "http://" + workerName + ":8081/api/removeAuthenticatedUser/" + username + "/" + token;
         HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
-        restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, ApiResponse.class);
+        restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, APIResponse.class);
     }
 
     public void setUpWorkersNames() {
@@ -45,7 +46,7 @@ public class Cluster {
             String workerName = "worker" + i;
             String url = "http://" + workerName + ":8081/api/setCurrentWorkerName/" + workerName;
             HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
-            restTemplate.exchange(url, HttpMethod.GET, requestEntity, ApiResponse.class);
+            restTemplate.exchange(url, HttpMethod.GET, requestEntity, APIResponse.class);
         }
     }
 
@@ -56,7 +57,7 @@ public class Cluster {
         headers.set("X-Token", "admin123");
         String url = "http://worker1:8081/api/setAffinity";
         HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
-        restTemplate.exchange(url, HttpMethod.GET, requestEntity, ApiResponse.class);
+        restTemplate.exchange(url, HttpMethod.GET, requestEntity, APIResponse.class);
     }
 
     public void sendUserInfo(String username, String token, String workerName) {

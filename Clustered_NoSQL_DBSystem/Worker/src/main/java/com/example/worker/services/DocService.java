@@ -278,121 +278,121 @@ public class DocService {
     public APIResponse updateDocument(String dbName, String collectionName, String docId, String propertyName,
                                       Object newValue, boolean propagatedRequest, String username, String token,
                                       String oldValue) {
-            logger.info("Updating document synchronously with ID {} in collection {} in database {}"
-                    + (propagatedRequest ? " (propagated successfully)!" : ""), docId, collectionName, dbName);
+        logger.info("Updating document synchronously with ID {} in collection {} in database {}"
+                + (propagatedRequest ? " (propagated successfully)!" : ""), docId, collectionName, dbName);
 
-            dbName = dbName.toLowerCase();
-            collectionName = collectionName.toLowerCase();
-            if (!authenticationService.isAuthenticatedUser(username, token)) {
-                logger.info("User is not authorized.");
-                return new APIResponse("User is not authorized.", 401);
-            }
+        dbName = dbName.toLowerCase();
+        collectionName = collectionName.toLowerCase();
+        if (!authenticationService.isAuthenticatedUser(username, token)) {
+            logger.info("User is not authorized.");
+            return new APIResponse("User is not authorized.", 401);
+        }
 
-            File dbDirectory = new File(DATABASES_DIRECTORY + dbName);
-            File collectionFile = new File(DATABASES_DIRECTORY + dbName + "/" + collectionName + ".json");
+        File dbDirectory = new File(DATABASES_DIRECTORY + dbName);
+        File collectionFile = new File(DATABASES_DIRECTORY + dbName + "/" + collectionName + ".json");
 
-            if (!isDatabaseExists(dbDirectory)) {
-                logger.warn("Database does not exist.");
-                return new APIResponse("Database does not exist.", 400);
-            }
+        if (!isDatabaseExists(dbDirectory)) {
+            logger.warn("Database does not exist.");
+            return new APIResponse("Database does not exist.", 400);
+        }
 
-            if (!isCollectionExists(collectionFile)) {
-                logger.warn("Collection does not exist.");
-                return new APIResponse("Collection does not exist.", 400);
-            }
+        if (!isCollectionExists(collectionFile)) {
+            logger.warn("Collection does not exist.");
+            return new APIResponse("Collection does not exist.", 400);
+        }
 
-            JSONObject currentObject = dao.getDocument(dbName, collectionName, docId);
-            if (currentObject == null) {
-                logger.warn("Document with ID {} not found in collection {}.", docId, collectionName);
-                return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
-            }
+        JSONObject currentObject = dao.getDocument(dbName, collectionName, docId);
+        if (currentObject == null) {
+            logger.warn("Document with ID {} not found in collection {}.", docId, collectionName);
+            return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
+        }
 
-            // Getting the data type from the schema.
-            File schemaFile = new File(DATABASES_DIRECTORY + dbName + SCHEMAS_DIRECTORY + collectionName + ".json");
-            String dataType = getDataType(schemaFile, propertyName);
+        // Getting the data type from the schema.
+        File schemaFile = new File(DATABASES_DIRECTORY + dbName + SCHEMAS_DIRECTORY + collectionName + ".json");
+        String dataType = getDataType(schemaFile, propertyName);
 
-            // Casting the new value to the correct data type.
-            switch (dataType) {
-                case "string":
-                    newValue = newValue.toString();
-                    break;
-                case "integer":
-                    newValue = Integer.parseInt(newValue.toString());
-                    break;
-                case "number":
-                    newValue = Double.parseDouble(newValue.toString());
-                    break;
-                case "boolean":
-                    newValue = Boolean.parseBoolean(newValue.toString());
-                    break;
-                default:
-                    return new APIResponse("Unsupported data type.", 400);
-            }
+        // Casting the new value to the correct data type.
+        switch (dataType) {
+            case "string":
+                newValue = newValue.toString();
+                break;
+            case "integer":
+                newValue = Integer.parseInt(newValue.toString());
+                break;
+            case "number":
+                newValue = Double.parseDouble(newValue.toString());
+                break;
+            case "boolean":
+                newValue = Boolean.parseBoolean(newValue.toString());
+                break;
+            default:
+                return new APIResponse("Unsupported data type.", 400);
+        }
 
-            // new json object
-            JSONObject newObject = new JSONObject(currentObject.toString());
-            newObject.put(propertyName, newValue);
+        // new json object
+        JSONObject newObject = new JSONObject(currentObject.toString());
+        newObject.put(propertyName, newValue);
 
-            // check if the new json object is valid
-            if (!validJSONObject(newObject.toString(), schemaFile)) {
-                logger.warn("Invalid JSON object.");
-                return new APIResponse("Invalid JSON object.", 400);
-            }
+        // check if the new json object is valid
+        if (!validJSONObject(newObject.toString(), schemaFile)) {
+            logger.warn("Invalid JSON object.");
+            return new APIResponse("Invalid JSON object.", 400);
+        }
 
-            if (propagatedRequest) {
-                if (dao.updateDoc(collectionFile, docId, newObject)) {
-                    propertyIndexManager.updateDocumentIndexing(dbName, collectionName, newObject);
-                    return new APIResponse("Document updated successfully.", 200);
-                } else {
-                    return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
-                }
-            }
-
-            // getting the owner affinity port for the document
-            String affinityName = affinityServices.getAffinityName(docId);
-            if (affinityName == null) {
-                return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
-            }
-
-            // if the owner affinity port is the current port
-            if (affinityName.equals(affinityServices.getCurrentWorkerName())) {
-                // Check whether the old value matches the value inside the affinity node.
-                // (Optimistic locking rules)
-                if (oldValue != null) {
-                    String currentObjectValue = currentObject.get(propertyName).toString();
-                    if (!oldValue.equals(currentObjectValue)) {
-                        return new APIResponse("Version of this document doesn't match the up-to-date document " +
-                                "(optimistic locking rules violation)", 400);
-                    }
-                }
-
-                logger.info("Propagating the update request to all the nodes...");
-                // Propagate the request to all the nodes.
-                for (String worker : affinityServices.getWorkers()) {
-                    String url = "http://" + worker + ":8081/api/updateDoc/" + dbName + "/" +
-                            collectionName + "/" + docId + "/" + propertyName + "/" + newValue;
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.set("X-Propagated-Request", "true");
-                    headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-                    headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
-                    HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
-                    restTemplate.postForObject(url, requestEntity, String.class);
-                }
+        if (propagatedRequest) {
+            if (dao.updateDoc(collectionFile, docId, newObject)) {
+                propertyIndexManager.updateDocumentIndexing(dbName, collectionName, newObject);
+                return new APIResponse("Document updated successfully.", 200);
             } else {
-                String url = "http://" + affinityName + ":8081/api/updateDoc/" + dbName + "/" +
+                return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
+            }
+        }
+
+        // getting the owner affinity port for the document
+        String affinityName = affinityServices.getAffinityName(docId);
+        if (affinityName == null) {
+            return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
+        }
+
+        // if the owner affinity port is the current port
+        if (affinityName.equals(affinityServices.getCurrentWorkerName())) {
+            // Check whether the old value matches the value inside the affinity node.
+            // (Optimistic locking rules)
+            if (oldValue != null) {
+                String currentObjectValue = currentObject.get(propertyName).toString();
+                if (!oldValue.equals(currentObjectValue)) {
+                    return new APIResponse("Version of this document doesn't match the up-to-date document " +
+                            "(optimistic locking rules violation)", 400);
+                }
+            }
+
+            logger.info("Propagating the update request to all the nodes...");
+            // Propagate the request to all the nodes.
+            for (String worker : affinityServices.getWorkers()) {
+                String url = "http://" + worker + ":8081/api/updateDoc/" + dbName + "/" +
                         collectionName + "/" + docId + "/" + propertyName + "/" + newValue;
-                // Sending the current version of data to the affinity.
                 HttpHeaders headers = new HttpHeaders();
-                headers.set("X-Old-Value", currentObject.get(propertyName).toString());
+                headers.set("X-Propagated-Request", "true");
                 headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
                 headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
                 HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
                 restTemplate.postForObject(url, requestEntity, String.class);
             }
-
-            logger.info("Document updated successfully.");
-            return new APIResponse("Document updated successfully.", 200);
+        } else {
+            String url = "http://" + affinityName + ":8081/api/updateDoc/" + dbName + "/" +
+                    collectionName + "/" + docId + "/" + propertyName + "/" + newValue;
+            // Sending the current version of data to the affinity.
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Old-Value", currentObject.get(propertyName).toString());
+            headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
+            headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+            HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
+            restTemplate.postForObject(url, requestEntity, String.class);
         }
+
+        logger.info("Document updated successfully.");
+        return new APIResponse("Document updated successfully.", 200);
+    }
 
 
 
