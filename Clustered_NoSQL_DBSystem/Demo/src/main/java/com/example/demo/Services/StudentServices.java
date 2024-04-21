@@ -10,8 +10,8 @@ import java.util.HashMap;
 
 public class StudentServices {
     private static StudentServices instance = null;
-    public static final String BOOTSTRAPPING_NODE_USERNAME = "admin";
-    public static final String BOOTSTRAPPING_NODE_TOKEN = "admin123";
+    public static final String NODE_USERNAME = "admin";
+    public static final String NODE_TOKEN = "admin123";
     private RestTemplate restTemplate = new RestTemplate();
 
     private StudentServices() {}

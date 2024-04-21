@@ -10,8 +10,8 @@ import java.util.logging.Logger;
 @Service
 public class Cluster {
 
-    private static final String BOOTSTRAPPING_NODE_USERNAME = "admin";
-    private static final String BOOTSTRAPPING_NODE_TOKEN = "admin123";
+    private static final String NODE_USERNAME = "admin";
+    private static final String NODE_TOKEN = "admin123";
 
     private static Cluster instance = null;
     private final HttpHeaders headers;
@@ -21,8 +21,8 @@ public class Cluster {
     private Cluster() {
         this.restTemplate = new RestTemplate();
         this.headers = new HttpHeaders();
-        headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-        headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+        headers.set("X-Username", NODE_USERNAME);
+        headers.set("X-Token", NODE_TOKEN);
     }
 
     public static Cluster getInstance() {

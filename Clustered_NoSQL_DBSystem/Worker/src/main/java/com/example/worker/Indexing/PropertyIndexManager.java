@@ -1,4 +1,4 @@
-package com.example.worker.indexing;
+package com.example.worker.Indexing;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

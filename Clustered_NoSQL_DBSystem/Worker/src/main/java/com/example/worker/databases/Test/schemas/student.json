@@ -1,12 +1,14 @@
 [
   {
-    "name": "John",
-    "age": 20,
-    "GPA": 3.5
+    "name": "omar",
+    "place": "amman",
+    "phone": 456,
+    "GPA": 95
   },
   {
-    "name": "Ali",
-    "age": 23,
-    "GPA": 3.2
+    "name": "fahed",
+    "place": "dubai",
+    "phone": 962,
+    "GPA": 99
   }
 ]

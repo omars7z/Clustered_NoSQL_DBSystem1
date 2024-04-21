@@ -1,7 +1,7 @@
-package com.example.worker.authentication;
+package com.example.worker.Authentication;
 
-import com.example.worker.caching.LRUCache;
-import com.example.worker.threading.AuthLock;
+import com.example.worker.Cache.LRUCache;
+import com.example.worker.Threading.AuthLock;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
@@ -14,7 +14,7 @@ import static com.example.worker.File.JSON.readFileAsString;
 @Component
 public class AuthenticationService {
 
-    private final String authDirectory = "src/main/java/com/example/worker/authentication/";
+    private final String authDirectory = "src/main/java/com/example/worker/Authentication/";
     private final LRUCache<String, String> userCache = new LRUCache<>(1000);
     private final LRUCache<String, String> adminCache = new LRUCache<>(1000);
     private final AuthLock authLock;

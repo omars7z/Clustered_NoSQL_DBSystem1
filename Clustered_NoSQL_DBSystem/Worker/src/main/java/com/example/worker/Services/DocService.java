@@ -1,11 +1,10 @@
-package com.example.worker.services;
+package com.example.worker.Services;
 
 import com.example.worker.DAO.DAO;
 import com.example.worker.File.JSON;
-import com.example.worker.authentication.AuthenticationService;
-import com.example.worker.controllers.DocumentController;
-import com.example.worker.indexing.PropertyIndexManager;
-import com.example.worker.model.APIResponse;
+import com.example.worker.Authentication.AuthenticationService;
+import com.example.worker.Indexing.PropertyIndexManager;
+import com.example.worker.Model.APIResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;
@@ -21,12 +20,11 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Set;
 
 import static com.example.worker.File.JSON.*;
-import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
-import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
+import static com.example.worker.Services.AffinityServices.NODE_TOKEN;
+import static com.example.worker.Services.AffinityServices.NODE_USERNAME;
 
 @Service
 public class DocService {
@@ -80,8 +78,8 @@ public class DocService {
         }
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-        headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+        headers.set("X-Username", NODE_USERNAME);
+        headers.set("X-Token", NODE_TOKEN);
 
 
         // the current worker is the affinity worker
@@ -254,8 +252,8 @@ public class DocService {
             return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
         }
         HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-        headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+        headers.set("X-Username", NODE_USERNAME);
+        headers.set("X-Token", NODE_TOKEN);
 
         // the document is owned by the current worker
         if (affinityName.equals(affinityServices.getCurrentWorkerName())) {
@@ -307,11 +305,9 @@ public class DocService {
             return new APIResponse("Document with ID " + docId + " not found in collection " + collectionName + ".", 404);
         }
 
-        // Getting the data type from the schema.
         File schemaFile = new File(DATABASES_DIRECTORY + dbName + SCHEMAS_DIRECTORY + collectionName + ".json");
         String dataType = getDataType(schemaFile, propertyName);
 
-        // Casting the new value to the correct data type.
         switch (dataType) {
             case "string":
                 newValue = newValue.toString();
@@ -329,11 +325,9 @@ public class DocService {
                 return new APIResponse("Unsupported data type.", 400);
         }
 
-        // new json object
+        // new json object then check if the new json object is valid
         JSONObject newObject = new JSONObject(currentObject.toString());
         newObject.put(propertyName, newValue);
-
-        // check if the new json object is valid
         if (!validJSONObject(newObject.toString(), schemaFile)) {
             logger.warn("Invalid JSON object.");
             return new APIResponse("Invalid JSON object.", 400);
@@ -356,8 +350,7 @@ public class DocService {
 
         // if the owner affinity port is the current port
         if (affinityName.equals(affinityServices.getCurrentWorkerName())) {
-            // Check whether the old value matches the value inside the affinity node.
-            // (Optimistic locking rules)
+            // Check whether the old value matches the value inside the affinity node (Optimistic locking rules)
             if (oldValue != null) {
                 String currentObjectValue = currentObject.get(propertyName).toString();
                 if (!oldValue.equals(currentObjectValue)) {
@@ -373,19 +366,19 @@ public class DocService {
                         collectionName + "/" + docId + "/" + propertyName + "/" + newValue;
                 HttpHeaders headers = new HttpHeaders();
                 headers.set("X-Propagated-Request", "true");
-                headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-                headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+                headers.set("X-Username", NODE_USERNAME);
+                headers.set("X-Token", NODE_TOKEN);
                 HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
                 restTemplate.postForObject(url, requestEntity, String.class);
             }
         } else {
             String url = "http://" + affinityName + ":8081/api/updateDoc/" + dbName + "/" +
                     collectionName + "/" + docId + "/" + propertyName + "/" + newValue;
-            // Sending the current version of data to the affinity.
+            // send current data to affinity
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Old-Value", currentObject.get(propertyName).toString());
-            headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-            headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+            headers.set("X-Username", NODE_USERNAME);
+            headers.set("X-Token", NODE_TOKEN);
             HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
             restTemplate.postForObject(url, requestEntity, String.class);
         }
@@ -393,7 +386,6 @@ public class DocService {
         logger.info("Document updated successfully.");
         return new APIResponse("Document updated successfully.", 200);
     }
-
 
 
     public static boolean isDatabaseExists(File file) {

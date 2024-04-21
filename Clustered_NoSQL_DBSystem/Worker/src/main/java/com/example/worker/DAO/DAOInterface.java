@@ -1,6 +1,6 @@
 package com.example.worker.DAO;
 
-import com.example.worker.model.Schema;
+import com.example.worker.Model.Schema;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

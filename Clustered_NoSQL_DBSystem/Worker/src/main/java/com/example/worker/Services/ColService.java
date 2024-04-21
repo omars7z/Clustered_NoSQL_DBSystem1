@@ -1,10 +1,10 @@
-package com.example.worker.services;
+package com.example.worker.Services;
 
 import com.example.worker.DAO.DAO;
-import com.example.worker.authentication.AuthenticationService;
-import com.example.worker.indexing.PropertyIndexManager;
-import com.example.worker.model.APIResponse;
-import com.example.worker.model.Schema;
+import com.example.worker.Authentication.AuthenticationService;
+import com.example.worker.Indexing.PropertyIndexManager;
+import com.example.worker.Model.APIResponse;
+import com.example.worker.Model.Schema;
 import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +17,8 @@ import org.springframework.web.client.RestTemplate;
 import java.io.File;
 
 import static com.example.worker.File.JSON.*;
-import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
-import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
+import static com.example.worker.Services.AffinityServices.NODE_TOKEN;
+import static com.example.worker.Services.AffinityServices.NODE_USERNAME;
 
 @Service
 public class ColService {
@@ -44,8 +44,8 @@ public class ColService {
     public APIResponse propagateCreateCollectionRequest(String dbName, String collectionName, Schema schema) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Propagated-Request", "true");
-        headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-        headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+        headers.set("X-Username", NODE_USERNAME);
+        headers.set("X-Token", NODE_TOKEN);
         String urlPrefix = "http://";
 
         for (String worker : affinityServices.getWorkers()) {
@@ -119,8 +119,8 @@ public class ColService {
     public APIResponse propagateDeleteCollectionRequest(String dbName, String collectionName) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Propagated-Request", "true");
-        headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-        headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+        headers.set("X-Username", NODE_USERNAME);
+        headers.set("X-Token", NODE_TOKEN);
         String urlPrefix = "http://";
 
         for (String worker : affinityServices.getWorkers()) {

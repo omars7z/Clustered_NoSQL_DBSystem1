@@ -16,8 +16,8 @@ public class DBSchema {
 
     public DBSchema(String databaseIP) {
         this.headers = new HttpHeaders();
-        headers.set("X-Username", StudentServices.BOOTSTRAPPING_NODE_USERNAME);
-        headers.set("X-Token", StudentServices.BOOTSTRAPPING_NODE_TOKEN);
+        headers.set("X-Username", StudentServices.NODE_USERNAME);
+        headers.set("X-Token", StudentServices.NODE_TOKEN);
         headers.setContentType(MediaType.APPLICATION_JSON);
     }
 

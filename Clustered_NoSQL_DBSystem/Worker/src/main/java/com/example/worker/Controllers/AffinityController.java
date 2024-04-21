@@ -1,8 +1,8 @@
-package com.example.worker.controllers;
+package com.example.worker.Controllers;
 
-import com.example.worker.model.APIResponse;
-import com.example.worker.services.AffinityServices;
-import com.example.worker.authentication.AuthenticationService;
+import com.example.worker.Model.APIResponse;
+import com.example.worker.Services.AffinityServices;
+import com.example.worker.Authentication.AuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

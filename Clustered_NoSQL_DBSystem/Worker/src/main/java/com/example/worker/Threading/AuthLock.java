@@ -1,4 +1,4 @@
-package com.example.worker.threading;
+package com.example.worker.Threading;
 
 import org.springframework.stereotype.Component;
 

@@ -1,9 +1,9 @@
 package com.example.worker.DAO;
 
-import com.example.worker.caching.LRUCache;
-import com.example.worker.indexing.PropertyIndexManager;
-import com.example.worker.model.Schema;
-import com.example.worker.threading.Threads;
+import com.example.worker.Cache.LRUCache;
+import com.example.worker.Indexing.PropertyIndexManager;
+import com.example.worker.Model.Schema;
+import com.example.worker.Threading.Threads;
 import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
@@ -14,8 +14,6 @@ import org.springframework.stereotype.Repository;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.example.worker.File.JSON.readFileAsString;
 

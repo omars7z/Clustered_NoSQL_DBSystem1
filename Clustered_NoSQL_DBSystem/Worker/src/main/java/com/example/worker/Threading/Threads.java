@@ -1,11 +1,10 @@
-package com.example.worker.threading;
+package com.example.worker.Threading;
 
-import com.example.worker.caching.LRUCache;
+import com.example.worker.Cache.LRUCache;
 import org.json.JSONArray;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 

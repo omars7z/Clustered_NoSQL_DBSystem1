@@ -1,4 +1,4 @@
-package com.example.worker.model;
+package com.example.worker.Model;
 
 
 public class APIResponse {

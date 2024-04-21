@@ -1,6 +1,6 @@
-package com.example.worker.services;
+package com.example.worker.Services;
 
-import com.example.worker.caching.LRUCache;
+import com.example.worker.Cache.LRUCache;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
@@ -18,15 +18,15 @@ import static com.example.worker.File.JSON.readFileAsString;
 
 @Service
 public class AffinityServices {
-    public final static String BOOTSTRAPPING_NODE_USERNAME = "admin";
-    public final static String BOOTSTRAPPING_NODE_TOKEN = "admin123";
+    public final static String NODE_USERNAME = "admin";
+    public final static String NODE_TOKEN = "admin123";
     private static AffinityServices instance = null;
-    private final String AFFINITY_FILE_PATH = "src/main/java/com/example/worker/services/affinity.json";
+    private final String AFFINITY_FILE_PATH = "src/main/java/com/example/worker/Services/affinity.json";
     private final Object lock = new Object();
     private List<String> workers = new ArrayList<>();
     private String currentWorkerName;
     private boolean isCurrentWorkerAffinity = false;
-    private LRUCache<String, String> affinityCache = new LRUCache(100000); // cache for affinity.
+    private LRUCache<String, String> affinityCache = new LRUCache(50000);
 
     private AffinityServices() {
         workers.add("worker1");
@@ -51,6 +51,18 @@ public class AffinityServices {
 
     public List<String> getWorkers() {
         return workers;
+    }
+
+    public synchronized void setCurrentWorkerAffinity() {
+        isCurrentWorkerAffinity = true;
+    }
+
+    public synchronized void unsetCurrentWorkerAffinity() {
+        isCurrentWorkerAffinity = false;
+    }
+
+    public boolean isCurrentWorkerAffinity() {
+        return isCurrentWorkerAffinity;
     }
 
     public void propagateAddingAffinity(String docId, String docManagerName) {
@@ -115,23 +127,9 @@ public class AffinityServices {
         return null;
     }
 
-    public synchronized void setCurrentWorkerAffinity() {
-        isCurrentWorkerAffinity = true;
-    }
-
-    public synchronized void unsetCurrentWorkerAffinity() {
-        isCurrentWorkerAffinity = false;
-    }
-
-    public boolean isCurrentWorkerAffinity() {
-        return isCurrentWorkerAffinity;
-    }
-
     public synchronized void removeAffinity(String docId) {
-        // removing from the cache.
-        affinityCache.remove(docId);
 
-        // removing from the file.
+        affinityCache.remove(docId);
         File file = new File(AFFINITY_FILE_PATH);
         JSONArray jsonArray = new JSONArray(readFileAsString(file));
         for (int i = 0; i < jsonArray.length(); i++) {

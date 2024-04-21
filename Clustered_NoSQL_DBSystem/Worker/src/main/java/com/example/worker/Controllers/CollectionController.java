@@ -1,9 +1,9 @@
-package com.example.worker.controllers;
+package com.example.worker.Controllers;
 
-import com.example.worker.authentication.AuthenticationService;
-import com.example.worker.model.APIResponse;
-import com.example.worker.model.Schema;
-import com.example.worker.services.ColService;
+import com.example.worker.Authentication.AuthenticationService;
+import com.example.worker.Model.APIResponse;
+import com.example.worker.Model.Schema;
+import com.example.worker.Services.ColService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;

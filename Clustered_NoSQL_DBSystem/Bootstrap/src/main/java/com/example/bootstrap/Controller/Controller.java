@@ -56,6 +56,6 @@ public class Controller {
         logger.info("Received request to remove user with token " + token);
         tokens.removeUser(token); //remove user by token because its unique
         apiResponse.generateSuccessResponse("User registered successfully", tokens.allUsers());
-        System.out.println(tokens.allUsers());
+        System.out.println("Current users: " + tokens.allUsers());
     }
 }

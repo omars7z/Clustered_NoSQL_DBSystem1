@@ -1,10 +1,10 @@
-package com.example.worker.controllers;
+package com.example.worker.Controllers;
 
-import com.example.worker.services.DocService;
+import com.example.worker.Services.DocService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.example.worker.authentication.AuthenticationService;
-import com.example.worker.model.APIResponse;
+import com.example.worker.Authentication.AuthenticationService;
+import com.example.worker.Model.APIResponse;
 
 @RestController
 @RequestMapping("/api")

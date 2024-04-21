@@ -1,7 +1,6 @@
-package com.example.worker.caching;
+package com.example.worker.Cache;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedHashMap;
 
 public class LRUCache<K, V> {

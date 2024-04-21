@@ -1,10 +1,10 @@
-package com.example.worker.controllers;
+package com.example.worker.Controllers;
 
 import com.example.worker.DAO.DAO;
-import com.example.worker.indexing.PropertyIndexManager;
-import com.example.worker.model.APIResponse;
-import com.example.worker.services.AffinityServices;
-import com.example.worker.authentication.AuthenticationService;
+import com.example.worker.Indexing.PropertyIndexManager;
+import com.example.worker.Model.APIResponse;
+import com.example.worker.Services.AffinityServices;
+import com.example.worker.Authentication.AuthenticationService;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +18,8 @@ import java.io.File;
 
 import static com.example.worker.File.JSON.DATABASES_DIRECTORY;
 import static com.example.worker.File.JSON.SCHEMAS_DIRECTORY;
-import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_TOKEN;
-import static com.example.worker.services.AffinityServices.BOOTSTRAPPING_NODE_USERNAME;
+import static com.example.worker.Services.AffinityServices.NODE_TOKEN;
+import static com.example.worker.Services.AffinityServices.NODE_USERNAME;
 
 @RestController
 @RequestMapping("/api")
@@ -62,8 +62,8 @@ public class DatabaseController {
                 String url = "http://" + worker + ":8081/api/createDB/" + name;
                 HttpHeaders headers = new HttpHeaders();
                 headers.set("X-Propagated-Request", "true");
-                headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-                headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+                headers.set("X-Username", NODE_USERNAME);
+                headers.set("X-Token", NODE_TOKEN);
                 HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
                 restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
             }
@@ -131,8 +131,8 @@ public class DatabaseController {
                 String url = "http://" + worker + ":8081/api/deleteDB/" + name;
                 HttpHeaders headers = new HttpHeaders();
                 headers.set("X-Propagated-Request", "true");
-                headers.set("X-Username", BOOTSTRAPPING_NODE_USERNAME);
-                headers.set("X-Token", BOOTSTRAPPING_NODE_TOKEN);
+                headers.set("X-Username", NODE_USERNAME);
+                headers.set("X-Token", NODE_TOKEN);
                 HttpEntity<String> requestEntity = new HttpEntity<>("", headers);
                 restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, String.class);
             }
