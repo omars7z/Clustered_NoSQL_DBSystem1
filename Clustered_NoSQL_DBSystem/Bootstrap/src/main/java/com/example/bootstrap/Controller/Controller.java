@@ -45,11 +45,10 @@ public class Controller {
         return userCredentialsJSON.toString();
     }
 
-    @GetMapping("/getAllUsers")
-    public void getAllUsers() {
+    @GetMapping("getAllUsers")
+    public String getAllUsers() {
         logger.info("Received request to get all users");
-        tokens.allUsers();
-        apiResponse.generateSuccessResponse("Viewed all users successfully", tokens.allUsers());
+        return Tokens.getInstance().allUsers();
     }
 
     @GetMapping("removeUser/{token}")
@@ -57,5 +56,6 @@ public class Controller {
         logger.info("Received request to remove user with token " + token);
         tokens.removeUser(token); //remove user by token because its unique
         apiResponse.generateSuccessResponse("User registered successfully", tokens.allUsers());
+        System.out.println(tokens.allUsers());
     }
 }

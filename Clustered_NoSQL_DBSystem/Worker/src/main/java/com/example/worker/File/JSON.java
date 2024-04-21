@@ -43,17 +43,12 @@ public class JSON {
     public static String addIdToDocument(String json) {
         ObjectMapper mapper = new ObjectMapper();
         try {
-            // Parse the JSON string to a JsonNode object
             JsonNode node = mapper.readTree(json);
-
-            // Check if the _id field already exists
             if (!node.has("_id")) {
-                // Generate a UUID and add it as the _id field
                 UUID uuid = UUID.randomUUID();
                 ((ObjectNode) node).put("_id", uuid.toString());
             }
 
-            // Convert the JsonNode object back to a JSON string
             String newJson = mapper.writeValueAsString(node);
             return newJson;
         } catch (Exception e) {
@@ -64,16 +59,10 @@ public class JSON {
     public static String removeIdFromDoc(String json) {
         ObjectMapper mapper = new ObjectMapper();
         try {
-            // Parse the JSON string to a JsonNode object
             JsonNode node = mapper.readTree(json);
-
-            // Check if the _id field already exists
             if (node.has("_id")) {
-                // Remove the _id field
                 ((ObjectNode) node).remove("_id");
             }
-
-            // Convert the JsonNode object back to a JSON string
             String newJson = mapper.writeValueAsString(node);
             return newJson;
         } catch (Exception e) {

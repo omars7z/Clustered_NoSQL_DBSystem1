@@ -16,13 +16,12 @@ import java.util.logging.Logger;
 @Service
 public class Tokens {
 
-    private static final String TOKENS_FILE_PATH = "src/main/resources/static/tokens.json";
     private static Tokens instance;
-    private final long expirationTime = TimeUnit.HOURS.toMillis(1);
-
     private final File tokensFile;
+    private final long expirationTime = TimeUnit.HOURS.toMillis(1);
     private final Logger logger = Logger.getLogger(Tokens.class.getName());
 
+    private static final String TOKENS_FILE_PATH = "src/main/resources/static/tokens.json";
     private Tokens() {
         tokensFile = new File(TOKENS_FILE_PATH);
     }
@@ -78,9 +77,8 @@ public class Tokens {
                 String userName = jsonObject.getString("userName");
                 String workerName = jsonObject.getString("workerName");
 
-                // Sending a request to the worker to remove the registered user.
-                Cluster.getInstance().removeExpiredToken(userName, token, workerName);
-                jsonArray.remove(i); // Remove the user from the JSONArray
+                Cluster.getInstance().removeExpiredToken(userName, token, workerName); // responsible worker will remove user
+                jsonArray.remove(i); // remove user from the JSONArray
                 break;
             }
         }
@@ -91,7 +89,7 @@ public class Tokens {
     @Scheduled(fixedRate = 900000)
     public void removeExpiredTokens() {
 
-        logger.info("Checking for expired tokens");
+        logger.info("Checking for expired tokens, every 15 mins");
 
         String info = readFileAsString(tokensFile);
         JSONArray jsonArray = new JSONArray(info);
@@ -105,7 +103,7 @@ public class Tokens {
                 String token = jsonObject.getString("token");
                 String workerName = jsonObject.getString("workerName");
 
-                Cluster.getInstance().removeExpiredToken(userName, token, workerName);
+                Cluster.getInstance().removeExpiredToken(userName, token, workerName); // responsible worker will remove user
                 iterator.remove(); // remove expired token from the JSONArray
             }
         }

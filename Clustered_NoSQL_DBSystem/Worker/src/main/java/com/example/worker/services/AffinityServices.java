@@ -21,7 +21,7 @@ public class AffinityServices {
     public final static String BOOTSTRAPPING_NODE_USERNAME = "admin";
     public final static String BOOTSTRAPPING_NODE_TOKEN = "admin123";
     private static AffinityServices instance = null;
-    private final String AFFINITY_FILE_PATH = "src/main/java/com/example/worker/services/document-affinity.json";
+    private final String AFFINITY_FILE_PATH = "src/main/java/com/example/worker/services/affinity.json";
     private final Object lock = new Object();
     private List<String> workers = new ArrayList<>();
     private String currentWorkerName;
